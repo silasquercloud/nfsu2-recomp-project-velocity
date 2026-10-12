@@ -55,6 +55,7 @@ DXT1 uses 8-byte 4×4 blocks versus 64-byte RGBA8 blocks (8× storage difference
 * Bounded 600-presentation-interval ring remains opt-in, compiled out when disabled. No file writes/logging in frame-hot paths.
 * Existing CPU/process, sampled D3D9, Present, draw count, Vulkan submit/present, fence, pipeline compile/bind, DXT and frame-limiter metrics are retained.
 * New timings isolate texture/buffer lock operations, DXVK resource waits, command-thread synchronization, `vkAcquireNextImageKHR` and D3D9 shader translation. `vulkan_present_host` now measures `vkQueuePresentKHR` alone, separate from pre-acquisition of the next image. Host timings overlap when nested or parallel; they are not GPU timestamps.
+* `texture_upload_copy` in .2 covers the whole `copyLockBack` operation, including its nested DXT decode and buffer/texture copies; .1 covered only the final RGBA copy. Do not compare that column directly as if its scope were unchanged. `copied_bytes` records unlock copies to native resources/compressed shadows; decoded pixels describe direct RGBA writes, not measured GPU transfer bytes.
 * New counters: decoded pixels, copied guest/resource bytes, texture fallback creation, observed Vulkan submit/present/acquire errors/suboptimal results, swapchain creation/recreation. Counts include an explicit whole-session summary and per-window events; initialization/first-interval events are not silently represented as gameplay-frame timing.
 * CSV headers include configured version/device/Android/options and actual DXVK-selected GPU/API/vendor/device/driver-version/BC capability. Diagnostic ZIP can include the separately performed GPU probe. Its selection may differ from a later run; actual DXVK device metadata remains authoritative for that run.
 * `vulkan_compat.h`/`gpu_probe.cpp`: probe device creation requests the supported subset of core D3D9 features instead of probing an empty feature mask. No Vulkan 1.2/1.3 requirement, unsupported extension or feature is added. This tests core creation, not an Android surface or all DXVK extension combinations.
@@ -112,3 +113,13 @@ Private-delivery tooling uses an ephemeral Actions runner and single-use certifi
 * Velocity .1 remains **68,302,087 bytes**, SHA-256 `04ee0a6bf4601ad4f0ae66aded5a9ed0f2cf8932ae2d1042f5fe8d80b4225e58`, at its existing release.
 
 A signed, smaller Release APK does not establish higher gameplay FPS. No before/after device result is available. Android installation, launcher rendering, import and gameplay still require the player's/device tester's validation.
+
+## Private GitHub delivery verified
+
+The upload workflow completed successfully: https://github.com/silasquercloud/nfsu2-recomp-project-velocity/actions/runs/38324465123
+
+* [Private draft release](https://github.com/silasquercloud/nfsu2-recomp-project-velocity/releases/tag/untagged-b83f0a5e351654b39ce1)
+* [Private APK asset](https://github.com/silasquercloud/nfsu2-recomp-project-velocity/releases/download/untagged-b83f0a5e351654b39ce1/NFSU2-Project-Velocity-ARM64-v0.14.0-velocity.2-ptBR.apk)
+* Authenticated download verified against the exact SHA-256 and 62,145,816-byte size above. Anonymous download returns HTTP 404. Sign in with the repository owner's/writer account; do not publish the draft if private distribution is required.
+* The single-use decryption key was never committed; the temporary encrypted transport branch was removed. Only the APK is attached to the draft, no generated sources or keys.
+* Both remote component/guard CI runs at implementation head `11a4b3e` passed: https://github.com/silasquercloud/nfsu2-recomp-project-velocity/actions/runs/38324463423 and https://github.com/silasquercloud/nfsu2-recomp-project-velocity/actions/runs/38324467093. These checks are separate from the full local/private-input APK build.
