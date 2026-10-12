@@ -313,3 +313,9 @@ The final 68,302,087-byte APK is a private chat/workspace artifact; no commercia
 executable, generated code or APK is posted to this public repository. Player
 install/import behavior remains intact. Android installation/gameplay and FPS
 still require a real device and the complete user's game folder.
+
+## Velocity .2 — pt-BR and low-end GPU diagnostics
+
+The follow-up implementation preserves .1 and its private generated inputs. It adds a complete pt-BR launcher resource inventory with Android/manual locale selection, direct pitched DXT region decoding, bounded repeated logs, safer default persistent DXVK state caching, expanded opt-in host profiling and core-feature-aware Vulkan probing. The Android variant now builds as a test-signed Release with versionCode 16. No Adreno 610/Mali G52 FPS gain or gameplay validation is claimed without a real device.
+
+See [the .2 technical report](docs/PROJECT_VELOCITY_V2_REPORT.md) for the pinned Winlator/DXVK/Box64/Mesa comparison, confirmed code costs versus hypotheses, validation evidence, device benchmark steps and private APK delivery.

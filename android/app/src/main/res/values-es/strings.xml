@@ -23,7 +23,7 @@
     <string name="probe_capabilities" formatted="false">"GPU y funciones Vulkan"</string>
     <string name="game_language" formatted="false">"Idioma"</string>
     <string name="velocity_section" formatted="false">"Project Velocity — Performance"</string>
-    <string name="velocity_version" formatted="false">"Experimental 0.14.0-velocity.1"</string>
+    <string name="velocity_version" formatted="false">"Experimental 0.14.0-velocity.2"</string>
     <string name="velocity_help" formatted="false">"Profiling OFF por padrão. Após jogar, volte ao launcher para salvar os últimos 600 frames. Tempos Vulkan são tempos de CPU, não de GPU."</string>
     <string name="export_performance" formatted="false">"Export Performance Report"</string>
     <string name="export_hint" formatted="false">"CSV da última sessão · volte do jogo primeiro"</string>

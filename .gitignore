@@ -31,3 +31,6 @@ work/
 
 # Third-party online mod binaries (local reference only)
 onlinemod/
+
+# Python developer-tool caches
+__pycache__/
