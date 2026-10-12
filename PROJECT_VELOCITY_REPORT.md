@@ -298,3 +298,18 @@ incomplete native packaging or an unchanged official library presented as Veloci
 A direct Debug retry still fails at the original CMake source prerequisite.
 Three real-input build guard tests passed. No Velocity APK exists; this delivery
 remains incomplete until authorized developer-generated inputs are accessible.
+
+
+## Phase 2: supplied executable unblocked the complete build
+
+The previous missing-source blocker is resolved in the private developer workspace.
+The supplied file's actual hash/layout were verified, the original pipeline
+recovered 27,742 functions and generated 70 C units with zero lift failures, and
+the complete modified ARM64 APK compiled/linked, packaged and test-signed.
+See [Phase 2 evidence](docs/PROJECT_VELOCITY_PHASE2.md) for exact artifact hash,
+symbol/ABI/signature checks, integration fixes and remaining device-test limits.
+Earlier blocked-build sections above are historical, not the final build state.
+The final 68,302,087-byte APK is a private chat/workspace artifact; no commercial
+executable, generated code or APK is posted to this public repository. Player
+install/import behavior remains intact. Android installation/gameplay and FPS
+still require a real device and the complete user's game folder.
