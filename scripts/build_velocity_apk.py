@@ -124,11 +124,15 @@ def main():
     if not all((tools / name).is_file() for name in ("aapt", "apksigner", "zipalign")):
         raise BuildBlocked("Install Android SDK Build-Tools 35.0.0 for APK verification")
     print(f"Building the complete upstream target from {chunks} local lifted C units.", flush=True)
+    built = root / "android/app/build/outputs/apk/debug/app-debug.apk"
+    # AGP incremental ZIP updates can leave an entire old native payload as
+    # unused archive space. Refresh only the generated APK, retaining C/LTO caches.
+    # Preflight above runs before removing any previous generated package.
+    built.unlink(missing_ok=True)
     command = ([sys.executable, str(args.gradle_runner.resolve())] if args.gradle_runner else
                ["bash", str(root / "android/gradlew"), "--no-daemon"])
     subprocess.run(command + [":app:assembleDebug", "-PnfsAbi=arm64-v8a", "-PnfsVelocityProfiling=true"],
                    cwd=root / "android", check=True)
-    built = root / "android/app/build/outputs/apk/debug/app-debug.apk"
     if not built.is_file():
         raise BuildBlocked("Gradle did not produce its documented Debug APK")
     output = (args.output_dir or root / "build/android").resolve()
