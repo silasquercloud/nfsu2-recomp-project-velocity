@@ -1,3 +1,4 @@
+#include "velocity_profile.h"
 struct ResourceLock {void* native;uint32_t guest,size,pitch,rowBytes,rows,flags;CompressedView compressed{};RECT rectangle{};uint32_t nativePitch{};};
 std::map<uint64_t,ResourceLock> resourceLocks;
 uint64_t lockKey(uint32_t object,uint32_t subresource){return (uint64_t(object)<<32)|subresource;}
@@ -54,9 +55,18 @@ void copyLockBack(uint32_t address,uint32_t subresource){
         uint32_t offset=(data.rectangle.top/4)*data.pitch+(data.rectangle.left/4)*texture.blockBytes();
         for(uint32_t row=0;row<data.rows;++row)std::memcpy(raw.data()+offset+row*data.pitch,static_cast<const uint8_t*>(pointer(data.guest))+row*data.pitch,data.rowBytes);
         uint32_t width=texture.mipWidth(data.compressed.level),height=texture.mipHeight(data.compressed.level);
-        auto pixels=decodeDXT(texture.mode(),width,height,raw.data(),raw.size());
-        for(int32_t row=0;row<data.rectangle.bottom-data.rectangle.top;++row)
-            std::memcpy(static_cast<uint8_t*>(data.native)+row*data.nativePitch,pixels.data()+((size_t(data.rectangle.top)+row)*width+data.rectangle.left)*4,(data.rectangle.right-data.rectangle.left)*4);
+        const uint32_t regionWidth=data.rectangle.right-data.rectangle.left;
+        const uint32_t regionHeight=data.rectangle.bottom-data.rectangle.top;
+        std::vector<uint8_t> pixels;
+        {
+            velocity::Scope profile(velocity::Metric::TextureDecode);
+            pixels=decodeDXTRegion(texture.mode(),width,height,raw.data(),raw.size(),
+            data.rectangle.left,data.rectangle.top,regionWidth,regionHeight);
+        }
+        velocity::Scope upload(velocity::Metric::TextureUpload);
+        for(uint32_t row=0;row<regionHeight;++row)
+            std::memcpy(static_cast<uint8_t*>(data.native)+row*data.nativePitch,
+                pixels.data()+size_t(row)*regionWidth*4,regionWidth*4);
     }
 }
 void releaseLock(uint32_t address,uint32_t subresource){auto lock=resourceLocks.find(lockKey(address,subresource));if(lock!=resourceLocks.end()){freeGuest(lock->second.guest);resourceLocks.erase(lock);}}
