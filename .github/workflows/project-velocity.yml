@@ -29,6 +29,13 @@ jobs:
           cmake --build build/graphics --parallel 4
           build/graphics/graphics_memory_check
           build/graphics/graphics_com_check
+      - name: APK build guards against a pinned real upstream release
+        run: |
+          curl --fail --location \
+            https://github.com/codepdbh/nfsu2-recompiled/releases/download/v0.13.1/NFSU2-AndroidEvolved-v0.13.1-arm64.apk \
+            --output build/official-baseline.apk
+          printf '%s  %s\n' e04752c50d3d396caa34010191d95698ff480e056c9592c3d27542554af2f9a2 build/official-baseline.apk | sha256sum --check
+          VELOCITY_OFFICIAL_APK=build/official-baseline.apk python3 tests/velocity/test_apk_build.py -v
       - name: ARM64 component compilation (not a device test or APK build)
         run: |
           python3 - <<'PY'

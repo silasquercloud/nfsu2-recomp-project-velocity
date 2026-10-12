@@ -282,3 +282,19 @@ Publication confirmed:
   (host tests and ARM64 component compilation; not APK/gameplay validation).
 - Working tree remained free of untracked game inputs, credentials and binaries.
   There is no APK download, signing result, file size or SHA-256 to report.
+
+## Follow-up: official release build audit
+
+See [PROJECT_VELOCITY_BUILD_AUDIT.md](docs/PROJECT_VELOCITY_BUILD_AUDIT.md).
+Player experience remains install APK + import the original game folder. Source
+generation is the developer's release-build step, never a new player requirement.
+The public upstream exposes no workflows/runs/artifacts supplying generated C.
+The actual v0.13.1 APK was checksum-verified, signature-verified and inspected:
+it is a full ARM64 Debug-signed/debuggable build, without generated source files
+or external commercial game assets. The documented developer build path is
+assembleDebug; exact private release commands are not publicly observable.
+The new developer-only build entry point uses that signed path and refuses
+incomplete native packaging or an unchanged official library presented as Velocity.
+A direct Debug retry still fails at the original CMake source prerequisite.
+Three real-input build guard tests passed. No Velocity APK exists; this delivery
+remains incomplete until authorized developer-generated inputs are accessible.
