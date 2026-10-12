@@ -66,7 +66,6 @@ replace('src/util/log/log.cpp', '        std::cerr << prefix << line << std::end
 # Project Velocity: optional host-side timing; never remove/shorten GPU waits.
 for path, signature, metric in (
     ("src/dxvk/dxvk_cmdlist.cpp", "  VkResult DxvkCommandList::synchronize() {", "FenceWait"),
-    ("src/vulkan/vulkan_presenter.cpp", "  VkResult Presenter::presentImage() {", "VulkanPresent"),
 ):
     replace(path, signature, signature + '\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::' + metric + ');\n#endif')
 for path in ("src/dxvk/dxvk_cmdlist.cpp", "src/vulkan/vulkan_presenter.cpp",
@@ -79,6 +78,33 @@ replace("src/dxvk/dxvk_graphics.cpp", "    const DxvkRenderPass*                
 replace("src/dxvk/dxvk_compute.cpp", "  VkPipeline DxvkComputePipeline::createPipeline(\n    const DxvkComputePipelineStateInfo& state) const {", "  VkPipeline DxvkComputePipeline::createPipeline(\n    const DxvkComputePipelineStateInfo& state) const {\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::PipelineCompile);\n#endif")
 replace("src/dxvk/dxvk_cmdlist.h", "#pragma once", '#pragma once\n#if NFS_VELOCITY_PROFILING\n#include "velocity_profile.h"\n#endif')
 replace("src/dxvk/dxvk_cmdlist.h", "      m_vkd->vkCmdBindPipeline(m_execBuffer,", "#if NFS_VELOCITY_PROFILING\n      if(velocity::enabled())velocity::record(velocity::Metric::PipelineBind,0);\n#endif\n      m_vkd->vkCmdBindPipeline(m_execBuffer,")
+# Additional bounded diagnostics for low-end Vulkan 1.1 devices.
+for path, signature, metric in (
+    ("src/d3d9/d3d9_device.cpp", "        DWORD                             MapFlags) {", "ResourceWait"),
+    ("src/d3d9/d3d9_device.cpp", "  void D3D9DeviceEx::SynchronizeCsThread() {", "CsWait"),
+    ("src/d3d9/d3d9_shader.cpp", "            DxsoModule*           pModule) {", "ShaderTranslate"),
+):
+    replace(path, signature, signature + '\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope timing(velocity::Metric::' + metric + ');\n#endif')
+for path in ("src/d3d9/d3d9_device.cpp", "src/d3d9/d3d9_shader.cpp", "src/dxvk/dxvk_device.cpp"):
+    file = args.output / path
+    file.write_text('#if NFS_VELOCITY_PROFILING\n#include "velocity_profile.h"\n#endif\n' + file.read_text())
+replace("src/vulkan/vulkan_presenter.cpp", "  VkResult Presenter::recreateSwapChain(const PresenterDesc& desc) {",
+        "  VkResult Presenter::recreateSwapChain(const PresenterDesc& desc) {\n#if NFS_VELOCITY_PROFILING\n    velocity::count(velocity::Counter::SwapchainRecreates);\n#endif")
+replace("src/vulkan/vulkan_presenter.cpp", "    VkResult status = m_vkd->vkQueuePresentKHR(m_device.queue, &info);",
+        "    VkResult status;\n    {\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope timing(velocity::Metric::VulkanPresent);\n#endif\n    status = m_vkd->vkQueuePresentKHR(m_device.queue, &info);\n#if NFS_VELOCITY_PROFILING\n    velocity::vulkanResult(status);\n#endif\n    }")
+# The present call pre-acquires the next image; isolate that wait inside Present.
+import re
+file = args.output / "src/vulkan/vulkan_presenter.cpp"
+text = file.read_text()
+text, matches = re.subn(r'(m_acquireStatus = m_vkd->vkAcquireNextImageKHR\(.*?&m_imageIndex\);)',
+    r'{\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope acquireTiming(velocity::Metric::VulkanAcquire);\n#endif\n    \1\n#if NFS_VELOCITY_PROFILING\n    velocity::vulkanResult(m_acquireStatus);\n#endif\n    }',text,flags=re.S)
+if matches != 2:
+    raise SystemExit("Acquire profiling patch mismatch")
+file.write_text(text)
+replace("src/dxvk/dxvk_cmdlist.cpp", "    return m_vkd->vkQueueSubmit(queue, 1, &submitInfo, fence);",
+        "    VkResult result = m_vkd->vkQueueSubmit(queue, 1, &submitInfo, fence);\n#if NFS_VELOCITY_PROFILING\n    velocity::vulkanResult(result);\n#endif\n    return result;")
+replace("src/dxvk/dxvk_device.cpp", "    auto queueFamilies = m_adapter->findQueueFamilies();",
+        "#if NFS_VELOCITY_PROFILING\n    const auto& props = m_adapter->deviceProperties();\n    velocity::metadata(str::format(\"gpu=\", props.deviceName, \" api=\", props.apiVersion, \" vendor=\", props.vendorID, \" device=\", props.deviceID, \" driverVersion=\", props.driverVersion, \" bc=\", m_features.core.features.textureCompressionBC));\n    velocity::metadata(\"dxvk=native-1.9.2b; Vulkan 1.1 backend; no driver bundled\");\n#endif\n    auto queueFamilies = m_adapter->findQueueFamilies();")
 (args.output / "version.h").write_text('#define DXVK_VERSION "native-1.9.2b-android-arm64"\n')
 (args.output / "PINNED_REVISION").write_text(PIN + "\n")
 print("Prepared DXVK " + PIN)

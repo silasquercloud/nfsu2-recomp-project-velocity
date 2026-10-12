@@ -29,6 +29,14 @@ def main():
     print(f"Presentation rate in captured window: {1000/statistics.mean(wall):.2f}/s")
     print(f"Process CPU ms/interval: mean={statistics.mean(cpu):.3f} (all process threads)")
     print(f"Intervals over {args.budget_ms:.3f} ms: {sum(x > args.budget_ms for x in wall)}")
+    timing_fields=[name for name in rows[0] if name.endswith("_ns") and name not in ("wall_ns","cpu_process_ns")]
+    print("Host timing by path (overlapping/nested; not GPU execution):")
+    for name in timing_fields:
+        samples=sorted(int(row[name])/1e6 for row in rows)
+        if samples[-1]>0:
+            print(f"  {name}: mean={statistics.mean(samples):.3f} ms p95={samples[max(0,math.ceil(.95*len(samples))-1)]:.3f} ms max={samples[-1]:.3f} ms")
+    for name in ("decoded_pixels","copied_bytes","texture_fallbacks","vulkan_errors","vulkan_suboptimal","swapchain_recreates"):
+        if name in rows[0]:print(f"Captured-window {name}: {sum(int(row[name]) for row in rows)}")
     print("D3D9 timing is sampled; nested/parallel host timings overlap. "
           "No GPU timestamps or exact guest runtime attribution.")
 

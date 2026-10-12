@@ -7,11 +7,17 @@
 namespace velocity {
 enum class Metric : unsigned { D3D9Sample, Present, TextureDecode, TextureUpload,
     SchedulerWait, FrameLimiter, VulkanSubmit, VulkanPresent, FenceWait,
-    PipelineCompile, PipelineBind, Count };
+    PipelineCompile, PipelineBind, TextureLock, BufferLock, ResourceWait, CsWait,
+    VulkanAcquire, ShaderTranslate, Count };
+enum class Counter : unsigned { DecodedPixels, CopiedBytes, TextureFallbacks,
+    VulkanErrors, VulkanSuboptimal, SwapchainRecreates, Count };
 #if NFS_VELOCITY_PROFILING
 bool enabled();
 uint64_t now();
 void record(Metric metric,uint64_t elapsed,uint64_t weight=1);
+void count(Counter counter,uint64_t amount=1);
+void metadata(const std::string& value);
+int32_t vulkanResult(int32_t result);
 void draw();
 void frame();
 void resetFrameClock();
@@ -30,6 +36,9 @@ public:
 };
 #else
 inline bool enabled(){return false;}
+inline void count(Counter,uint64_t=1){}
+inline void metadata(const std::string&){}
+inline int32_t vulkanResult(int32_t result){return result;}
 inline void draw(){}
 inline void frame(){}
 inline void resetFrameClock(){}

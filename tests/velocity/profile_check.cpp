@@ -16,21 +16,27 @@ int main(){
     const std::string path=directory+"velocity-profile-"+std::to_string(getpid())+".csv";
 #if NFS_VELOCITY_PROFILING
     require(velocity::configure(true,path));require(!velocity::exportReport());
+    velocity::metadata("gpu=host\ninjected_header");
+    require(velocity::vulkanResult(-4)==-4);
+    velocity::vulkanResult(1000001003);
     velocity::frame();
     for(unsigned i=0;i<605;++i){
         velocity::record(velocity::Metric::D3D9Sample,7,64);
+        velocity::count(velocity::Counter::CopiedBytes,128);
         velocity::draw();velocity::frame();
     }
     require(velocity::exportReport());
-    std::ifstream csv(path);std::string line;unsigned rows=0;
+    std::ifstream csv(path);std::string line;unsigned rows=0;bool metadataSeen=false,errorsSeen=false;
     while(std::getline(csv,line)){
+        if(line=="# gpu=host injected_header")metadataSeen=true;
+        if(line=="# session_vulkan_errors=1")errorsSeen=true;
         if(line.empty()||line[0]=='#'||line.rfind("frame,",0)==0)continue;
         std::istringstream row(line);std::vector<uint64_t> values;
         while(std::getline(row,line,','))values.push_back(std::stoull(line));
-        require(values.size()==27);require(values[0]==rows+6);require(values[1]>0);
-        require(values[3]==1&&values[5]==448&&values[6]==1);++rows;
+        require(values.size()==45);require(values[0]==rows+6);require(values[1]>0);
+        require(values[3]==1&&values[5]==448&&values[6]==1&&values[40]==128);++rows;
     }
-    require(rows==600);
+    require(rows==600&&metadataSeen&&errorsSeen);
     velocity::resetFrameClock();velocity::frame();
     std::vector<std::thread> workers;
     for(unsigned i=0;i<4;++i)workers.emplace_back([]{for(unsigned j=0;j<100;++j)velocity::record(velocity::Metric::FenceWait,9);});
