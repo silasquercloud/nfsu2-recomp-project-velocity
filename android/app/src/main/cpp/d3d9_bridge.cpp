@@ -1,5 +1,6 @@
 #include "d3d9_bridge.h"
 #include "runtime_log.h"
+#include "velocity_profile.h"
 #include "dxt_shadow.h"
 #include <d3d9.h>
 #include <algorithm>
@@ -99,6 +100,7 @@ std::atomic<uint32_t> configuredBackBuffers{2};
 // Launcher "Texturas comprimidas: convertir en CPU": DXT decoded to RGBA8 even when the
 // driver reports BC support, for drivers whose BC sampling is broken.
 std::atomic<bool> forceCpuTextures{false};
+std::string shaderCacheDirectory; // Startup-only, before device creation.
 uint32_t hostBackBufferCount(uint32_t requested){
     uint32_t count=std::max(requested,configuredBackBuffers.load());
     static bool logged=false;
@@ -127,11 +129,13 @@ void describeOriginal(uint32_t address,D3DSURFACE_DESC* desc){auto view=compress
 void setD3D9Compatibility(bool cpuTextures,unsigned backBuffers){
     forceCpuTextures=cpuTextures;configuredBackBuffers=backBuffers<1?1u:backBuffers>3?3u:backBuffers;
 }
+void setD3D9ShaderCache(const std::string& directory){shaderCacheDirectory=directory;}
 void configureD3D9Bridge(void* base,uint32_t (*allocator)(uint32_t),void (*deallocator)(uint32_t)){
     guestBase=base;allocateGuest=allocator;freeGuest=deallocator;
 #ifdef __ANDROID__
     // Shader caches are optional; the Android process has no writable cwd.
-    setenv("DXVK_STATE_CACHE","0",1);
+    setenv("DXVK_STATE_CACHE",shaderCacheDirectory.empty()?"0":"1",1);
+    if(!shaderCacheDirectory.empty())setenv("DXVK_STATE_CACHE_PATH",shaderCacheDirectory.c_str(),1);
     setenv("DXVK_LOG_PATH","none",1);
 #endif
 #ifndef __ANDROID__
@@ -160,6 +164,14 @@ uint32_t createGuestD3D9(uint32_t sdk){
 }
 uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumentCount){
     uint32_t kind=(token-methodBase)/4096,method=((token-methodBase)%4096)/16;
+    const bool isPresent=(kind==2&&method==17)||(kind==13&&method==3);
+#if NFS_VELOCITY_PROFILING
+    static uint64_t sampleSequence=0; // Calls are serialized by the guest machine.
+    const bool sample=velocity::enabled()&&(isPresent||(++sampleSequence&63u)==0);
+    velocity::Scope profile(isPresent?velocity::Metric::Present:velocity::Metric::D3D9Sample,
+        isPresent?1:64,sample);
+    if(kind==2&&method>=81&&method<=84)velocity::draw();
+#endif
     auto found=objects.find(args[0]);
     if(found==objects.end()||static_cast<uint32_t>(found->second.kind)!=kind){
         NFS_RUNTIME_LOG(ANDROID_LOG_ERROR,"NFSU2","Invalid D3D9 COM call object=%08x token=%08x kind=%u method=%u actualKind=%u",args[0],token,kind,method,
@@ -170,7 +182,7 @@ uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumen
     // Android may replace ANativeWindow after backgrounding, even at the same
     // pointer address. Override the destination with this surface generation so
     // DXVK recreates its presenter while keeping the game's device/resources.
-    if((kind==2&&method==17)||(kind==13&&method==3)){
+    if(isPresent){
         *argumentCount=kind==2?5:6;auto window=dxvkAndroidGetWindowHandle();
         if(!window)return D3DERR_DEVICELOST;
         auto source=static_cast<const RECT*>(pointer(args[1])),destination=static_cast<const RECT*>(pointer(args[2]));

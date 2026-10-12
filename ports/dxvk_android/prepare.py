@@ -63,6 +63,22 @@ replace('src/d3d9/d3d9_fixed_function.cpp', 'namespace dxvk {\n', 'namespace dxv
 # DXVK warnings and errors reach logcat (tag DXVK) for tester reports.
 replace('src/util/log/log.cpp', '#include "log.h"\n', '#include "log.h"\n#ifdef __ANDROID__\n#include <android/log.h>\n#endif\n')
 replace('src/util/log/log.cpp', '        std::cerr << prefix << line << std::endl;\n', '        std::cerr << prefix << line << std::endl;\n#ifdef __ANDROID__\n        // stderr goes nowhere on Android: send warnings and errors to logcat,\n        // so tester reports (logcat.txt) show why DXVK failed.\n        if (level >= LogLevel::Warn)\n          __android_log_print(level >= LogLevel::Error ? ANDROID_LOG_ERROR : ANDROID_LOG_WARN, "DXVK", "%s", line.c_str());\n#endif\n')
+# Project Velocity: optional host-side timing; never remove/shorten GPU waits.
+for path, signature, metric in (
+    ("src/dxvk/dxvk_cmdlist.cpp", "  VkResult DxvkCommandList::synchronize() {", "FenceWait"),
+    ("src/vulkan/vulkan_presenter.cpp", "  VkResult Presenter::presentImage() {", "VulkanPresent"),
+):
+    replace(path, signature, signature + '\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::' + metric + ');\n#endif')
+for path in ("src/dxvk/dxvk_cmdlist.cpp", "src/vulkan/vulkan_presenter.cpp",
+             "src/dxvk/dxvk_graphics.cpp", "src/dxvk/dxvk_compute.cpp"):
+    file = args.output / path
+    file.write_text('#if NFS_VELOCITY_PROFILING\n#include "velocity_profile.h"\n#endif\n' + file.read_text())
+replace("src/dxvk/dxvk_cmdlist.cpp", "    return m_vkd->vkQueueSubmit(queue, 1, &submitInfo, fence);",
+    "#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::VulkanSubmit);\n#endif\n    return m_vkd->vkQueueSubmit(queue, 1, &submitInfo, fence);")
+replace("src/dxvk/dxvk_graphics.cpp", "    const DxvkRenderPass*                renderPass) const {", "    const DxvkRenderPass*                renderPass) const {\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::PipelineCompile);\n#endif")
+replace("src/dxvk/dxvk_compute.cpp", "  VkPipeline DxvkComputePipeline::createPipeline(\n    const DxvkComputePipelineStateInfo& state) const {", "  VkPipeline DxvkComputePipeline::createPipeline(\n    const DxvkComputePipelineStateInfo& state) const {\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::PipelineCompile);\n#endif")
+replace("src/dxvk/dxvk_cmdlist.h", "#pragma once", '#pragma once\n#if NFS_VELOCITY_PROFILING\n#include "velocity_profile.h"\n#endif')
+replace("src/dxvk/dxvk_cmdlist.h", "      m_vkd->vkCmdBindPipeline(m_execBuffer,", "#if NFS_VELOCITY_PROFILING\n      if(velocity::enabled())velocity::record(velocity::Metric::PipelineBind,0);\n#endif\n      m_vkd->vkCmdBindPipeline(m_execBuffer,")
 (args.output / "version.h").write_text('#define DXVK_VERSION "native-1.9.2b-android-arm64"\n')
 (args.output / "PINNED_REVISION").write_text(PIN + "\n")
 print("Prepared DXVK " + PIN)

@@ -12,6 +12,7 @@
 #include "game_data.h"
 #include "guest_runtime.h"
 #include "d3d9_bridge.h"
+#include "velocity_profile.h"
 #include "guest_boot_worker.h"
 #include "gamepad_input.h"
 #include "vulkan_driver.h"
@@ -371,4 +372,26 @@ void android_main(android_app* app) {
     }
     host.renderer.stop();
     acknowledgeD3D9Surface(false);setD3D9HostWindow(nullptr);
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeVelocity(
+    JNIEnv* env,jclass,jboolean profiling,jstring report,jstring cache){
+    const char* reportPath=env->GetStringUTFChars(report,nullptr);
+    if(!reportPath)return;
+    const char* cachePath=env->GetStringUTFChars(cache,nullptr);
+    if(cachePath){
+        velocity::configure(profiling==JNI_TRUE,reportPath);
+        setD3D9ShaderCache(cachePath);
+    }
+    if(reportPath)env->ReleaseStringUTFChars(report,reportPath);
+    if(cachePath)env->ReleaseStringUTFChars(cache,cachePath);
+}
+extern "C" JNIEXPORT jboolean JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeExportVelocity(JNIEnv*,jclass){
+    const bool exported=velocity::exportReport();
+    velocity::resetFrameClock(); // Exclude background time from the next interval.
+    return exported?JNI_TRUE:JNI_FALSE;
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeFramePacing(JNIEnv*,jclass,jboolean experimental){
+    setGuestExperimentalFramePacing(experimental==JNI_TRUE);
 }
