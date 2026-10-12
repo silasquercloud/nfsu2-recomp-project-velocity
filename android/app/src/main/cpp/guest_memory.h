@@ -26,11 +26,17 @@ private:
     std::map<uint64_t,uint32_t> protection_;
     uint64_t page_=static_cast<uint64_t>(sysconf(_SC_PAGESIZE));
     bool accessible(uint32_t va,uint64_t bytes,bool write)const{
-        if(!bytes)return true;if(uint64_t(va)>=size||bytes>size-va)return false;
+        if(!bytes)return true;
+        if(uint64_t(va)>=size||bytes>size-va)return false;
         auto region=committed_.upper_bound(va);if(region==committed_.begin())return false;
         --region;if(uint64_t(va)+bytes>region->second)return false;
-        for(uint64_t page=uint64_t(va)/page_*page_;page<uint64_t(va)+bytes;page+=page_){
-            auto found=protection_.find(page);uint32_t value=found==protection_.end()?4:found->second;
+        // Committed pages without an override are RW. Visit only explicit
+        // protection entries in the range, retaining all bounds/commit checks.
+        // No cached permission result can survive a protect() or commit().
+        const uint64_t first=uint64_t(va)/page_*page_,end=uint64_t(va)+bytes;
+        for(auto found=protection_.lower_bound(first);
+            found!=protection_.end()&&found->first<end;++found){
+            const uint32_t value=found->second;
             if(write?(value!=4&&value!=8&&value!=0x40&&value!=0x80):(value==1||value==0x10))return false;
         }return true;
     }
