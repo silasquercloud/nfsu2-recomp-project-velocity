@@ -6,9 +6,9 @@
 #include "runtime_log.h"
 #include "velocity_profile.h"
 #include "velocity_frame_pacer.h"
+#include "nfs_widescreen.h"
 #if defined(__ANDROID__) || defined(NFS_D3D9_BACKEND)
 #include "d3d9_bridge.h"
-#include "nfs_widescreen.h"
 #endif
 #include <array>
 #include <vector>

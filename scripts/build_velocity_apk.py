@@ -104,6 +104,12 @@ def main():
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     chunks = check_generated_sources(root)
+    # The original ARM64 target includes adrenotools and its pinned nested
+    # linker namespace dependency. Do not replace them with launcher stubs.
+    dependencies = [root / "third_party/libadrenotools/CMakeLists.txt",
+                    root / "third_party/libadrenotools/lib/linkernsbypass/CMakeLists.txt"]
+    if not all(path.is_file() for path in dependencies):
+        subprocess.run(["git", "submodule", "update", "--init", "--recursive"], cwd=root, check=True)
     sdk_value = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
     if not sdk_value:
         raise BuildBlocked("Set ANDROID_HOME to the developer's prepared Android SDK")

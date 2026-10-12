@@ -29,7 +29,12 @@ uint32_t invoke(recomp_func_t fn,std::initializer_list<uint32_t> args){arguments
 uint32_t text(const char* value){std::strcpy(static_cast<char*>(ptr(0x401000,4096)),value);return 0x401000;}
 int main(){
     memory=std::make_unique<GuestMemory>();memory->commit(0x400000,0x4000);
-    char temporary[]="/data/local/tmp/nfsu2-files-XXXXXX";auto root=mkdtemp(temporary);require(root);hostGameRoot=root;
+#ifdef __ANDROID__
+    char temporary[]="/data/local/tmp/nfsu2-files-XXXXXX";
+#else
+    char temporary[]="/tmp/nfsu2-files-XXXXXX";
+#endif
+    auto root=mkdtemp(temporary);require(root);hostGameRoot=root;
     try{
         require(invoke(shellFolderPath,{0,0x801c,0,0,0x400000})==0);
         require(guestString(0x400000)=="C:\\nfsu2\\AppData\\Local");
