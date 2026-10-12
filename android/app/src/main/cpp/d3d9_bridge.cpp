@@ -207,7 +207,8 @@ uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumen
             throw std::runtime_error("D3D9 COM Release without owned reference");
         }
         auto nativeReferences=object->Release();uint32_t references=--found->second.references;
-        if(kind==5)NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","Surface Release object=%08x guestRefs=%u nativeRefs=%u",args[0],references,uint32_t(nativeReferences));
+        static unsigned surfaceReleaseLogs=0;
+        if(kind==5&&surfaceReleaseLogs<8&&++surfaceReleaseLogs)NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","Surface Release object=%08x guestRefs=%u nativeRefs=%u",args[0],references,uint32_t(nativeReferences));
         if(!references){
             if(found->second.children)return uint32_t(nativeReferences);
             auto parent=found->second.parent;retireGuestObject(args[0]);
@@ -254,7 +255,7 @@ uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumen
             // here with the reason instead.
             static unsigned failures=0;failures=FAILED(status)?failures+1:0;
             if(FAILED(status)&&failures<2)return status;
-            if(FAILED(status))throw std::runtime_error("La GPU no pudo crear el dispositivo grafico (Vulkan, CreateDevice "+
+            if(FAILED(status))throw std::runtime_error("GPU device creation failed (Vulkan, CreateDevice "+
                 std::to_string(uint32_t(status))+"). Usa \"Probar driver\" en el launcher para ver que le falta.");
             write(args[6],wrap(device,Kind::Device));return status;
         }
@@ -273,14 +274,14 @@ uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumen
             auto original=static_cast<D3DFORMAT>(args[5]),format=nativeTextureFormat(device,original,args[4],D3DRTYPE_TEXTURE);IDirect3DTexture9* texture=nullptr;
             HRESULT status=device->CreateTexture(args[1],args[2],args[3],args[4],format,static_cast<D3DPOOL>(args[6]),&texture,nullptr);
             uint32_t address=SUCCEEDED(status)?wrap(texture,Kind::Texture):0;
-            if(address&&format!=original){objects.at(address).compressed.texture=std::make_shared<CompressedTexture>(original,args[1],args[2],texture->GetLevelCount(),1);NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","CPU DXT fallback texture %ux%u format=%u",args[1],args[2],original);}
+            if(address&&format!=original){objects.at(address).compressed.texture=std::make_shared<CompressedTexture>(original,args[1],args[2],texture->GetLevelCount(),1);velocity::count(velocity::Counter::TextureFallbacks);static unsigned fallbackLogs=0;if(fallbackLogs<8&&++fallbackLogs)NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","CPU DXT fallback texture %ux%u format=%u",args[1],args[2],original);}
             write(args[7],address);return status;}
         case 25:{*argumentCount=8;if(args[7])throw std::runtime_error("Shared cube handle pending");if(!args[6])return D3DERR_INVALIDCALL;
             auto original=static_cast<D3DFORMAT>(args[4]),format=nativeTextureFormat(device,original,args[3],D3DRTYPE_CUBETEXTURE);IDirect3DCubeTexture9* texture=nullptr;
             HRESULT status=device->CreateCubeTexture(args[1],args[2],args[3],format,static_cast<D3DPOOL>(args[5]),&texture,nullptr);
             NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","D3D9 CreateCubeTexture edge=%u levels=%u usage=%08x format=%u nativeFormat=%u pool=%u status=%08x output=%08x",args[1],args[2],args[3],unsigned(original),unsigned(format),args[5],uint32_t(status),args[6]);
             uint32_t address=SUCCEEDED(status)?wrap(texture,Kind::Cube):0;
-            if(address&&format!=original)objects.at(address).compressed.texture=std::make_shared<CompressedTexture>(original,args[1],args[1],texture->GetLevelCount(),6);
+            if(address&&format!=original){objects.at(address).compressed.texture=std::make_shared<CompressedTexture>(original,args[1],args[1],texture->GetLevelCount(),6);velocity::count(velocity::Counter::TextureFallbacks);}
             write(args[6],address);return status;}
 #include "d3d9_device_methods.inc"
     }}

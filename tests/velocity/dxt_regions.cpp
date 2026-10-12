@@ -13,6 +13,19 @@ int main(){
             auto region=decodeDXTRegion(mode,width,height,blocks.data(),blocks.size(),left,top,rw,rh);
             require(region.size()==size_t(rw)*rh*4);
             for(uint32_t y=0;y<rh;++y)require(!std::memcmp(region.data()+y*rw*4,full.data()+((top+y)*width+left)*4,rw*4));
+            size_t pitch=rw*4+13;
+            std::vector<uint8_t> padded(pitch*rh+32,0xCD);
+            decodeDXTRegionInto(mode,width,height,blocks.data(),blocks.size(),left,top,rw,rh,
+                padded.data()+16,pitch*rh,pitch);
+            for(uint32_t y=0;y<rh;++y){
+                require(!std::memcmp(padded.data()+16+y*pitch,region.data()+y*rw*4,rw*4));
+                for(size_t x=rw*4;x<pitch;++x)require(padded[16+y*pitch+x]==0xCD);
+            }
+            for(size_t k=0;k<16;++k){require(padded[k]==0xCD);require(padded[padded.size()-1-k]==0xCD);}
+            bool badDestination=false;
+            try{decodeDXTRegionInto(mode,width,height,blocks.data(),blocks.size(),left,top,rw,rh,
+                padded.data(),rw*4-1,pitch);}catch(const std::invalid_argument&){badDestination=true;}
+            require(badDestination);
             ++rectangles;
         }
         bool rejected=false;
