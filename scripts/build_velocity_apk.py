@@ -6,6 +6,7 @@ stubs, an official prebuilt game library, or a launcher-only native target.
 """
 import argparse
 import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -32,7 +33,7 @@ class BuildBlocked(RuntimeError):
 def check_generated_sources(root):
     generated = root / "src/recomp/gen"
     required = [generated / name for name in
-                ("recomp_funcs.h", "recomp_dispatch.c", "recomp_imports.c")]
+                ("recomp_funcs.h", "recomp_dispatch.c", "recomp_imports.c", "lift_stats.json")]
     chunks = sorted(generated.glob("recomp_[0-9]*.c"))
     missing = [str(path.relative_to(root)) for path in required
                if not path.is_file() or path.stat().st_size == 0]
@@ -45,6 +46,11 @@ def check_generated_sources(root):
             "The developer must obtain authorized generated inputs or run the upstream\n"
             "generation pipeline in their build workspace. This is not a player step.\n"
             "The launcher import workflow remains unchanged. No substitute APK is built.")
+    stats = json.loads((generated / "lift_stats.json").read_text())
+    if stats.get("lift_failures") != 0 or stats.get("failures"):
+        raise BuildBlocked("The original generator reported lift failures; do not package its failure bodies")
+    if stats.get("files") != len(chunks) or not stats.get("functions"):
+        raise BuildBlocked("Generated source metadata does not match the lifted compilation units")
     return len(chunks)
 
 
@@ -146,6 +152,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except (BuildBlocked, subprocess.CalledProcessError, OSError, zipfile.BadZipFile) as error:
+    except (BuildBlocked, subprocess.CalledProcessError, OSError, zipfile.BadZipFile, json.JSONDecodeError) as error:
         print(f"Velocity APK build blocked: {error}", file=sys.stderr)
         sys.exit(1)
