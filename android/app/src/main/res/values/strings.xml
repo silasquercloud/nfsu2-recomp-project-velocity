@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" formatted="false">"NFSU2 Recompiled — Project Velocity ARM64"</string>
+    <string name="crash_title" formatted="false">"The game closed"</string>
+    <string name="crash_prompt" formatted="false">".\n\nWould you like to report this crash on GitHub?"</string>
+    <string name="report_github" formatted="false">"Report on GitHub"</string>
+    <string name="not_now" formatted="false">"Not now"</string>
+    <string name="native_subtitle" formatted="false">"PC · natively recompiled for Android"</string>
+    <string name="game_files" formatted="false">"GAME FILES"</string>
+    <string name="play" formatted="false">"PLAY"</string>
+    <string name="storage_access" formatted="false">"Allow access to internal storage/nfsu2"</string>
+    <string name="options" formatted="false">"OPTIONS"</string>
+    <string name="options_apply" formatted="false">"Applied when you press PLAY."</string>
+    <string name="game_folders" formatted="false">"Game folders"</string>
+    <string name="missing_folders" formatted="false">"Missing folders: "</string>
+    <string name="widescreen_data" formatted="false">"Widescreen HUD (scripts/…WidescreenFix.dat)"</string>
+    <string name="allow_storage" formatted="false">"Allow file access to read internal storage/nfsu2."</string>
+    <string name="storage_path" formatted="false">"Internal storage/nfsu2"</string>
+    <string name="copy_game" formatted="false">"Copy your game files to internal storage/nfsu2."</string>
+    <string name="vulkan_driver" formatted="false">"Vulkan driver"</string>
+    <string name="system_driver_short" formatted="false">"System"</string>
+    <string name="probe_driver" formatted="false">"Test driver"</string>
+    <string name="probe_capabilities" formatted="false">"GPU and Vulkan capabilities"</string>
+    <string name="game_language" formatted="false">"Game language"</string>
+    <string name="velocity_section" formatted="false">"Project Velocity — Performance"</string>
+    <string name="velocity_version" formatted="false">"Experimental 0.14.0-velocity.2"</string>
+    <string name="velocity_help" formatted="false">"Profiling is off by default. Return to the launcher after playing to save the last 600 frames. Vulkan timings measure host CPU calls, not GPU execution."</string>
+    <string name="export_performance" formatted="false">"Export performance report"</string>
+    <string name="export_hint" formatted="false">"Last session CSV · return from the game first"</string>
+    <string name="online_server" formatted="false">"Online server"</string>
+    <string name="check_updates" formatted="false">"Check for updates"</string>
+    <string name="checking_github" formatted="false">"Checking GitHub…"</string>
+    <string name="version_prefix" formatted="false">"Version "</string>
+    <string name="report_problem" formatted="false">"Report a problem"</string>
+    <string name="full_log" formatted="false">"Full log for GitHub"</string>
+    <string name="no_frames" formatted="false">"No frames recorded. Enable performance profiling, play, and return to the launcher. Wait for the report snapshot before exporting."</string>
+    <string name="no_game_languages" formatted="false">"No game languages found in internal storage/nfsu2/LANGUAGES."</string>
+    <string name="cancel" formatted="false">"Cancel"</string>
+    <string name="online_help" formatted="false">"The online mode (EA Nation) connects to this community server instead of the discontinued EA servers."</string>
+    <string name="save" formatted="false">"Save"</string>
+    <string name="restore" formatted="false">"Restore"</string>
+    <string name="invalid_server_suffix" formatted="false">"\\" is not a valid server name."</string>
+    <string name="system_driver" formatted="false">"System driver"</string>
+    <string name="import_zip" formatted="false">"Import ZIP"</string>
+    <string name="remove_driver" formatted="false">"Remove selected driver"</string>
+    <string name="back" formatted="false">"Back"</string>
+    <string name="driver_failure_prefix" formatted="false">"Could not use the driver: "</string>
+    <string name="vulkan_start_error" formatted="false">"error starting Vulkan."</string>
+    <string name="bc_label" formatted="false">"\nBC textures: "</string>
+    <string name="bc_gpu" formatted="false">"on the GPU"</string>
+    <string name="bc_cpu" formatted="false">"converted on the CPU"</string>
+    <string name="compatible" formatted="false">"Compatible with the game."</string>
+    <string name="missing_features" formatted="false">"Missing features: "</string>
+    <string name="probe_title" formatted="false">"Vulkan driver test"</string>
+    <string name="use_system_driver" formatted="false">"Use system driver"</string>
+    <string name="invalid_diagnostic" formatted="false">"Invalid diagnostic: "</string>
+    <string name="destination_unavailable" formatted="false">"Destination unavailable"</string>
+    <string name="report_saved" formatted="false">"Report saved."</string>
+    <string name="importing_driver" formatted="false">"Importing Vulkan driver…"</string>
+    <string name="driver_imported_prefix" formatted="false">"Driver imported: "</string>
+    <string name="driver_imported_suffix" formatted="false">". Use Test driver to check it."</string>
+    <string name="driver_import_failure" formatted="false">"Could not import the driver: "</string>
+    <string name="updates" formatted="false">"Updates"</string>
+    <string name="installed_prefix" formatted="false">"Installed version: "</string>
+    <string name="no_update_suffix" formatted="false">". No newer version is available on GitHub."</string>
+    <string name="new_version" formatted="false">"New version available: "</string>
+    <string name="update_message" formatted="false">"You can download it from GitHub or keep this version. Update only with an APK signed by the same developer; back up saves before switching builds."</string>
+    <string name="update" formatted="false">"Update"</string>
+    <string name="later" formatted="false">"Later"</string>
+    <string name="preparing_report" formatted="false">"Preparing the report…"</string>
+    <string name="report_instructions" formatted="false">"1. Save the ZIP containing the full log.\n2. A GitHub issue will open: describe what happened and attach the ZIP."</string>
+    <string name="save_open_github" formatted="false">"Save and open GitHub"</string>
+    <string name="prepare_report_error" formatted="false">"Could not prepare the report: "</string>
+    <string name="report_unavailable" formatted="false">"The report is no longer available."</string>
+    <string name="open_destination_error" formatted="false">"Could not open the destination."</string>
+    <string name="save_zip_error" formatted="false">"Could not save the ZIP: "</string>
+    <string name="no_browser" formatted="false">"No browser is available to open "</string>
+    <string name="optional_suffix" formatted="false">" · optional"</string>
+    <string name="ok" formatted="false">"OK"</string>
+    <string name="no_accelerometer" formatted="false">"This device has no accelerometer"</string>
+    <string name="tilt_enable" formatted="false">"Steer by tilting the phone"</string>
+    <string name="tilt_invert" formatted="false">"Invert steering"</string>
+    <string name="sensitivity_prefix" formatted="false">"Sensitivity: "</string>
+    <string name="tilt_help" formatted="false">"Hold the phone in your playing position when applying. Tilt controls steering; pedals remain touch controls."</string>
+    <string name="tilt_title" formatted="false">"Tilt steering"</string>
+    <string name="tilt_apply" formatted="false">"Apply and calibrate"</string>
+    <string name="text_hint" formatted="false">"Name, email or password"</string>
+    <string name="text_replace" formatted="false">"Replace the current name"</string>
+    <string name="text_title" formatted="false">"Type in the game"</string>
+    <string name="text_write" formatted="false">"Type"</string>
+    <string name="text_validation" formatted="false">"Up to 40 characters: unaccented letters, numbers and . , - _ @ + ! # $ % &amp; * ( ) = ? / ; :"</string>
+    <string name="cache_unavailable" formatted="false">"Shader cache unavailable: using the default"</string>
+    <string name="startup_storage" formatted="false">"Project Velocity\nChecking internal storage/nfsu2…"</string>
+    <string name="storage_permission" formatted="false">"Allow file access to read the nfsu2 folder in internal storage"</string>
+    <string name="checking_driver" formatted="false">"Checking the Vulkan driver…"</string>
+    <string name="controls_description" formatted="false">"Game controls"</string>
+    <string name="controls_restore" formatted="false">"RESET"</string>
+    <string name="controls_save" formatted="false">"SAVE"</string>
+    <string name="controls_cancel" formatted="false">"CANCEL"</string>
+    <string name="controls_options" formatted="false">"Control options"</string>
+    <string name="controls_style_hint" formatted="false">"Style: classic / Xbox / PlayStation"</string>
+    <string name="layout_save" formatted="false">"Save layout with a name"</string>
+    <string name="layout_load_custom" formatted="false">"Load custom layout"</string>
+    <string name="controls_style" formatted="false">"Driving style"</string>
+    <string name="style_classic" formatted="false">"Classic · arrows and pedals"</string>
+    <string name="style_xbox" formatted="false">"Xbox · steering wheel and A / B / X / Y"</string>
+    <string name="style_playstation" formatted="false">"PlayStation · steering wheel and × / ○ / □ / △"</string>
+    <string name="layout_name" formatted="false">"Layout name"</string>
+    <string name="layout_save_prefix" formatted="false">"Save layout for "</string>
+    <string name="driving" formatted="false">"driving"</string>
+    <string name="menu" formatted="false">"menu"</string>
+    <string name="enter_name" formatted="false">"Enter a name"</string>
+    <string name="layout_saved" formatted="false">"Layout saved: "</string>
+    <string name="layout_save_error" formatted="false">"Could not save the layout"</string>
+    <string name="no_layouts" formatted="false">"No layouts saved for this mode yet"</string>
+    <string name="layout_load" formatted="false">"Load layout"</string>
+    <string name="layout_load_error" formatted="false">"Could not load the layout"</string>
+    <string name="resolution" formatted="false">"Internal resolution"</string>
+    <string name="resolution_native" formatted="false">"Native · maximum quality"</string>
+    <string name="resolution_balanced" formatted="false">"75% · balanced"</string>
+    <string name="resolution_fast" formatted="false">"50% · maximum performance"</string>
+    <string name="resolution_720" formatted="false">"1280×720 · 16:9"</string>
+    <string name="fps_limit" formatted="false">"FPS limit"</string>
+    <string name="fps_battery" formatted="false">"30 FPS · save battery"</string>
+    <string name="fps_60" formatted="false">"60 FPS"</string>
+    <string name="fps_90" formatted="false">"90 FPS"</string>
+    <string name="fps_120" formatted="false">"120 FPS"</string>
+    <string name="unlimited" formatted="false">"Unlimited"</string>
+    <string name="widescreen" formatted="false">"Widescreen"</string>
+    <string name="widescreen_fixed" formatted="false">"Corrected HUD and camera"</string>
+    <string name="widescreen_original" formatted="false">"Original stretched 4:3"</string>
+    <string name="minimap" formatted="false">"Minimap"</string>
+    <string name="minimap_top" formatted="false">"Top left"</string>
+    <string name="minimap_bottom" formatted="false">"Bottom left (original)"</string>
+    <string name="cpu_gpu_sync" formatted="false">"CPU/GPU synchronization"</string>
+    <string name="sync_parallel" formatted="false">"Performance · CPU and GPU in parallel"</string>
+    <string name="sync_latency" formatted="false">"Low latency · fewer FPS"</string>
+    <string name="compressed_textures" formatted="false">"Compressed textures"</string>
+    <string name="textures_auto" formatted="false">"Automatic · GPU when supported"</string>
+    <string name="textures_cpu" formatted="false">"Convert on CPU · compatibility"</string>
+    <string name="frame_pacing" formatted="false">"Frame pacing"</string>
+    <string name="pacing_default" formatted="false">"Default"</string>
+    <string name="pacing_experimental" formatted="false">"Experimental · no bursts after delays"</string>
+    <string name="profiling" formatted="false">"Performance profiling"</string>
+    <string name="profiling_off" formatted="false">"Off"</string>
+    <string name="profiling_on" formatted="false">"On · CSV + Android tracing"</string>
+    <string name="shader_cache" formatted="false">"Shader cache"</string>
+    <string name="cache_off" formatted="false">"Disabled"</string>
+    <string name="cache_on" formatted="false">"DXVK state cache · persistent"</string>
+    <string name="github_connection" formatted="false">"Could not contact GitHub. Check your connection and try again later."</string>
+    <string name="github_unavailable" formatted="false">"GitHub unavailable"</string>
+    <string name="response_too_large" formatted="false">"Response too large"</string>
+    <string name="crash_anr" formatted="false">"The game stopped responding"</string>
+    <string name="crash_unexpected" formatted="false">"The game closed unexpectedly"</string>
+    <string name="phone_label" formatted="false">"\nPhone: "</string>
+    <string name="report_create_error" formatted="false">"Could not create the report."</string>
+    <string name="date_label" formatted="false">"Date: "</string>
+    <string name="report_what" formatted="false">"### What happened\n"</string>
+    <string name="report_steps" formatted="false">"\n### Steps to reproduce\n\n"</string>
+    <string name="report_device" formatted="false">"### Device\n"</string>
+    <string name="report_attach_prefix" formatted="false">"\n### Full log\nAttach the file **"</string>
+    <string name="report_attach_suffix" formatted="false">"** you just saved.\n"</string>
+    <string name="report_tail" formatted="false">"\n### Last log lines\n```\n"</string>
+    <string name="unexpected_exit" formatted="false">"unexpected exit"</string>
+    <string name="trace_unavailable" formatted="false">"Trace unavailable: "</string>
+    <string name="ui_language" formatted="false">"Launcher language"</string>
+    <string name="locale_system" formatted="false">"Android language"</string>
+    <string name="locale_portuguese" formatted="false">"Português (Brasil)"</string>
+    <string name="locale_english" formatted="false">"English"</string>
+    <string name="locale_help" formatted="false">"Changes the launcher only. The game\'s language files remain unchanged."</string>
+    <string name="boot_pending" formatted="false">"Waiting to start the game"</string>
+    <string name="boot_running" formatted="false">"Starting the game…"</string>
+    <string name="boot_finished" formatted="false">"Game returned: "</string>
+    <string name="boot_stopped" formatted="false">"Game initialization stopped: "</string>
+    <string name="exe_read_error" formatted="false">"Cannot read SPEED2.EXE. Check game files and storage permission."</string>
+    <string name="exe_mismatch" formatted="false">"SPEED2.EXE has an unexpected size or header."</string>
+    <string name="directory_read_error" formatted="false">"Cannot read game directory: "</string>
+    <string name="directory_empty" formatted="false">"Empty game directory: "</string>
+    <string name="probe_cancelled" formatted="false">"The driver test was cancelled or closed."</string>
+    <string name="probe_timeout" formatted="false">"The driver test exceeded 20 seconds."</string>
+    <string name="probe_failed" formatted="false">"Could not run the driver test."</string>
+    <string name="driver_open" formatted="false">"Could not open the selected driver."</string>
+    <string name="driver_entry" formatted="false">"Driver does not provide vkGetInstanceProcAddr."</string>
+    <string name="driver_instance" formatted="false">"Driver does not provide vkCreateInstance."</string>
+    <string name="driver_functions" formatted="false">"Driver has incomplete Vulkan functions."</string>
+    <string name="no_vulkan_gpu" formatted="false">"No Vulkan GPU was found."</string>
+    <string name="zip_count" formatted="false">"The ZIP contains too many files."</string>
+    <string name="zip_paths" formatted="false">"The ZIP contains invalid or repeated paths."</string>
+    <string name="mkdir_error" formatted="false">"Could not create the folder."</string>
+    <string name="driver_size" formatted="false">"The driver package is too large."</string>
+    <string name="driver_abi" formatted="false">"The driver must be an Android ARM64 (.so) library."</string>
+    <string name="driver_link" formatted="false">"Unexpected link in the package."</string>
+    <string name="delete_error" formatted="false">"Could not delete "</string>
+    <string name="driver_mkdir" formatted="false">"Could not create the driver folder."</string>
+    <string name="zip_open" formatted="false">"Could not open the ZIP."</string>
+    <string name="driver_meta" formatted="false">"The driver ZIP is missing meta.json."</string>
+    <string name="driver_library" formatted="false">"Invalid libraryName."</string>
+    <string name="driver_android" formatted="false">"This driver requires a newer Android version."</string>
+    <string name="driver_name" formatted="false">"Invalid driver name."</string>
+    <string name="driver_install" formatted="false">"Could not install the driver."</string>
+    <string name="package_install" formatted="false">"Could not install the package."</string>
+    <string name="driver_ambiguous" formatted="false">"Multiple meta.json files: ambiguous package."</string>
+    <string name="driver_protect" formatted="false">"Could not protect the driver library."</string>
+    <string name="driver_path" formatted="false">"Invalid driver path."</string>
+    <string name="runtime_call_missing" formatted="false">"Unsupported runtime call: "</string>
+    <string name="network_unimplemented" formatted="false">"Unsupported network operation: "</string>
+    <string name="custom_driver_failed" formatted="false">"Could not load the selected Vulkan driver. Select the system driver in the launcher. Library: "</string>
+</resources>

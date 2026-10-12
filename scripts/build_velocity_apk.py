@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Developer-only build of the complete port; players only install/import game data.
 
-Use the upstream signed Debug APK path. Never replace absent lifted game C with
+Use the signed Release APK path. Never replace absent lifted game C with
 stubs, an official prebuilt game library, or a launcher-only native target.
 """
 import argparse
@@ -16,10 +16,10 @@ import sys
 import tempfile
 import zipfile
 
-VERSION = "0.14.0-velocity.1"
-VERSION_CODE = "15"
+VERSION = "0.14.0-velocity.2"
+VERSION_CODE = "16"
 PACKAGE = "com.nfsu2.androidevolved"
-APK_NAME = f"NFSU2-Project-Velocity-ARM64-v{VERSION}.apk"
+APK_NAME = f"NFSU2-Project-Velocity-ARM64-v{VERSION}-ptBR.apk"
 LIBRARIES = {
     "libnfsu2_android.so", "libnfsu2_diagnostics.so", "libmain_hook.so",
     "libfile_redirect_hook.so", "libgsl_alloc_hook.so", "libhook_impl.so",
@@ -79,7 +79,7 @@ def inspect_contents(apk, require_velocity=True):
                 raise BuildBlocked("Game-file entry must not be packaged: " + name)
         if require_velocity:
             game = archive.read(native["libnfsu2_android.so"])
-            if b"Project Velocity 0.14.0-velocity.1" not in game:
+            if b"Project Velocity 0.14.0-velocity.2" not in game:
                 raise BuildBlocked("Native Velocity profiling marker missing; refuse an unchanged official library")
     return sorted(native)
 
@@ -124,17 +124,17 @@ def main():
     if not all((tools / name).is_file() for name in ("aapt", "apksigner", "zipalign")):
         raise BuildBlocked("Install Android SDK Build-Tools 35.0.0 for APK verification")
     print(f"Building the complete upstream target from {chunks} local lifted C units.", flush=True)
-    built = root / "android/app/build/outputs/apk/debug/app-debug.apk"
+    built = root / "android/app/build/outputs/apk/release/app-release.apk"
     # AGP incremental ZIP updates can leave an entire old native payload as
     # unused archive space. Refresh only the generated APK, retaining C/LTO caches.
     # Preflight above runs before removing any previous generated package.
     built.unlink(missing_ok=True)
     command = ([sys.executable, str(args.gradle_runner.resolve())] if args.gradle_runner else
                ["bash", str(root / "android/gradlew"), "--no-daemon"])
-    subprocess.run(command + [":app:assembleDebug", "-PnfsAbi=arm64-v8a", "-PnfsVelocityProfiling=true"],
+    subprocess.run(command + [":app:assembleRelease", "-PnfsAbi=arm64-v8a", "-PnfsVelocityProfiling=true"],
                    cwd=root / "android", check=True)
     if not built.is_file():
-        raise BuildBlocked("Gradle did not produce its documented Debug APK")
+        raise BuildBlocked("Gradle did not produce its Release APK")
     output = (args.output_dir or root / "build/android").resolve()
     output.mkdir(parents=True, exist_ok=True)
     # Verify the copied bytes before exposing the requested filename.
@@ -150,7 +150,7 @@ def main():
     print(f"APK: {destination}\nVersion: {VERSION}\nABI: arm64-v8a\n"
           f"Bytes: {destination.stat().st_size}\nSHA-256: {digest}\n"
           f"Native libraries: {', '.join(libraries)}\n"
-          "Test-signed via upstream Debug build. Gameplay has not been verified by these packaging checks.")
+          "Release build with development/test signature. Gameplay has not been verified by these packaging checks.")
 
 
 if __name__ == "__main__":

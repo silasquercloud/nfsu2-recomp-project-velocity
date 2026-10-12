@@ -17,21 +17,25 @@ public final class GpuProbeActivity extends Activity {
     private static native String nativeGpuReport(String hooks, String temp, String directory, String library);
     private boolean finished;
 
+    @Override protected void attachBaseContext(android.content.Context base) {
+        super.attachBaseContext(UiText.wrap(base));
+    }
+
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         TextView status = new TextView(this);
-        status.setText("Comprobando el driver Vulkan…");
+        status.setText(UiText.t(GpuProbeActivity.this, R.string.checking_driver));
         status.setTextColor(0xFFFFFFFF); status.setTextSize(18);
         status.setGravity(android.view.Gravity.CENTER); status.setBackgroundColor(0xFF0B0F14);
         setContentView(status);
         Handler main = new Handler(Looper.getMainLooper());
-        main.postDelayed(() -> finishReport("{\"probeError\":\"La prueba del driver excedió 20 segundos\",\"driverLoadFailed\":true}"), 20000);
+        main.postDelayed(() -> finishReport("{\"probeError\":\"probe_timeout\",\"driverLoadFailed\":true}"), 20000);
         String[] loader = GpuDrivers.loaderArguments(this);
         new Thread(() -> {
             String result;
             try { result = nativeGpuReport(loader[0], loader[1], loader[2], loader[3]); }
             catch (Exception | LinkageError error) {
-                result = "{\"probeError\":\"No se pudo ejecutar la prueba: " + error.getClass().getSimpleName() + "\",\"driverLoadFailed\":true}";
+                result = "{\"probeError\":\"probe_failed\",\"driverLoadFailed\":true}";
             }
             String report = result;
             main.post(() -> finishReport(report));

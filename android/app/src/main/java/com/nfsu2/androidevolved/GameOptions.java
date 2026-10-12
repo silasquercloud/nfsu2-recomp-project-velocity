@@ -9,13 +9,20 @@ import android.content.SharedPreferences;
  */
 final class GameOptions {
     static final class Option {
-        final String key, title, defaultValue;
-        final String[] values, labels;
-        Option(String key, String title, String defaultValue, String[] values, String[] labels) {
-            this.key = key; this.title = title; this.defaultValue = defaultValue; this.values = values; this.labels = labels;
+        final String key, defaultValue;
+        final int title;
+        final String[] values;
+        final int[] labelIds;
+        Option(String key, int title, String defaultValue, String[] values, int[] labels) {
+            this.key = key; this.title = title; this.defaultValue = defaultValue; this.values = values; this.labelIds = labels;
         }
-        String label(String value) {
-            for (int i = 0; i < values.length; i++) if (values[i].equals(value)) return labels[i];
+        String[] labels(Context context) {
+            String[] result=new String[labelIds.length];
+            for(int i=0;i<result.length;i++)result[i]=context.getString(labelIds[i]);
+            return result;
+        }
+        String label(Context context, String value) {
+            for (int i = 0; i < values.length; i++) if (values[i].equals(value)) return context.getString(labelIds[i]);
             return value;
         }
     }
@@ -24,32 +31,32 @@ final class GameOptions {
             TEXTURES = "textures", MINIMAP = "minimap", LANGUAGE = "language";
 
     static final Option[] ALL = {
-            new Option(RESOLUTION, "Resolución interna", "75",
+            new Option(RESOLUTION, R.string.resolution, "75",
                     new String[] {"100", "75", "50", "720"},
-                    new String[] {"Nativa · máxima calidad", "75% · equilibrada", "50% · máximo rendimiento",
-                            "1280×720 · 16:9"}),
-            new Option(FPS, "Límite de FPS", "120",
+                    new int[]{R.string.resolution_native, R.string.resolution_balanced, R.string.resolution_fast,
+                            R.string.resolution_720}),
+            new Option(FPS, R.string.fps_limit, "120",
                     new String[] {"30", "60", "90", "120", "0"},
-                    new String[] {"30 FPS · ahorra batería", "60 FPS", "90 FPS", "120 FPS", "Sin límite"}),
-            new Option(WIDESCREEN, "Pantalla panorámica", "on",
+                    new int[]{R.string.fps_battery, R.string.fps_60, R.string.fps_90, R.string.fps_120, R.string.unlimited}),
+            new Option(WIDESCREEN, R.string.widescreen, "on",
                     new String[] {"on", "off"},
-                    new String[] {"HUD y cámara corregidos", "Original 4:3 estirado"}),
-            new Option(MINIMAP, "Minimapa", "top",
+                    new int[]{R.string.widescreen_fixed, R.string.widescreen_original}),
+            new Option(MINIMAP, R.string.minimap, "top",
                     new String[] {"top", "bottom"},
-                    new String[] {"Arriba a la izquierda", "Abajo a la izquierda (original)"}),
-            new Option(LATENCY, "Sincronía CPU/GPU", "2",
+                    new int[]{R.string.minimap_top, R.string.minimap_bottom}),
+            new Option(LATENCY, R.string.cpu_gpu_sync, "2",
                     new String[] {"2", "1"},
-                    new String[] {"Rendimiento · CPU y GPU en paralelo", "Baja latencia · menos FPS"}),
-            new Option(TEXTURES, "Texturas comprimidas", "auto",
+                    new int[]{R.string.sync_parallel, R.string.sync_latency}),
+            new Option(TEXTURES, R.string.compressed_textures, "auto",
                     new String[] {"auto", "cpu"},
-                    new String[] {"Automático · GPU si las soporta", "Convertir en CPU · compatibilidad"}),
+                    new int[]{R.string.textures_auto, R.string.textures_cpu}),
     };
 
     static final String PROFILING="velocity_profiling", SHADER_CACHE="velocity_shader_cache", FRAME_PACING="velocity_frame_pacing";
     static final Option[] VELOCITY = {
-        new Option(FRAME_PACING,"Frame Pacing","default",new String[]{"default","experimental"},new String[]{"Padrão","Experimental · sem rajadas após atraso"}),
-        new Option(PROFILING,"Performance Profiling","off",new String[]{"off","on"},new String[]{"OFF","ON · CSV + Android tracing"}),
-        new Option(SHADER_CACHE,"Shader Cache","off",new String[]{"off","on"},new String[]{"Padrão · desativado","DXVK state cache · experimental"}),
+        new Option(FRAME_PACING,R.string.frame_pacing,"default",new String[]{"default","experimental"},new int[]{R.string.pacing_default,R.string.pacing_experimental}),
+        new Option(PROFILING,R.string.profiling,"off",new String[]{"off","on"},new int[]{R.string.profiling_off,R.string.profiling_on}),
+        new Option(SHADER_CACHE,R.string.shader_cache,"on",new String[]{"off","on"},new int[]{R.string.cache_off,R.string.cache_on}),
     };
 
     private static final String PREFS = "nfsu2_game";
