@@ -45,6 +45,13 @@ final class GameOptions {
                     new String[] {"Automático · GPU si las soporta", "Convertir en CPU · compatibilidad"}),
     };
 
+    static final String PROFILING="velocity_profiling", SHADER_CACHE="velocity_shader_cache", FRAME_PACING="velocity_frame_pacing";
+    static final Option[] VELOCITY = {
+        new Option(FRAME_PACING,"Frame Pacing","default",new String[]{"default","experimental"},new String[]{"Padrão","Experimental · sem rajadas após atraso"}),
+        new Option(PROFILING,"Performance Profiling","off",new String[]{"off","on"},new String[]{"OFF","ON · CSV + Android tracing"}),
+        new Option(SHADER_CACHE,"Shader Cache","off",new String[]{"off","on"},new String[]{"Padrão · desativado","DXVK state cache · experimental"}),
+    };
+
     private static final String PREFS = "nfsu2_game";
 
     private GameOptions() {}
@@ -55,6 +62,7 @@ final class GameOptions {
 
     static Option find(String key) {
         for (Option o : ALL) if (o.key.equals(key)) return o;
+        for (Option o : VELOCITY) if (o.key.equals(key)) return o;
         throw new IllegalArgumentException(key);
     }
 

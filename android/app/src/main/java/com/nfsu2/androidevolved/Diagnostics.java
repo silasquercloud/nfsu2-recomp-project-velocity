@@ -81,6 +81,12 @@ final class Diagnostics {
                     .append("\n\nOpciones:\n");
             for (GameOptions.Option option : GameOptions.ALL)
                 info.append(option.key).append('=').append(GameOptions.get(context, option.key)).append('\n');
+            for (GameOptions.Option option : GameOptions.VELOCITY)
+                info.append(option.key).append('=').append(GameOptions.get(context,option.key)).append('\n');
+            File performance = new File(context.getFilesDir(),"velocity-performance.csv");
+            if (performance.isFile()) try (InputStream input = new java.io.FileInputStream(performance)) {
+                add(zip,"velocity-performance.csv",readLimited(input));
+            }
             info.append("language=").append(GameOptions.language(context)).append('\n');
             add(zip, "informe.txt", info.toString().getBytes(StandardCharsets.UTF_8));
             add(zip, "logcat.txt", logcat(0));

@@ -36,7 +36,7 @@ import java.util.concurrent.Executors;
  * right (Vulkan driver, resolution, frame cap, widescreen, compatibility).
  */
 public final class LauncherActivity extends Activity {
-    private static final int REQUEST_DRIVER_ZIP = 45, REQUEST_DRIVER_PROBE = 46, REQUEST_SAVE_REPORT = 47;
+    private static final int REQUEST_DRIVER_ZIP = 45, REQUEST_DRIVER_PROBE = 46, REQUEST_SAVE_REPORT = 47, REQUEST_SAVE_VELOCITY = 48;
     // NFSU2 green.
     private static final int ACCENT = 0xFF8EE03A;
     /** {label, guest language name, LANGUAGES/<file>.bin}. */
@@ -191,10 +191,28 @@ public final class LauncherActivity extends Activity {
         optionsList.addView(optionRow("Idioma", languageLabel(), this::chooseLanguage));
         for (GameOptions.Option option : GameOptions.ALL)
             optionsList.addView(optionRow(option.title, option.label(GameOptions.get(this, option.key)), () -> chooseOption(option)));
+        optionsList.addView(optionRow("Project Velocity — Performance", "Experimental 0.14.0-velocity.1", () ->
+                message("Project Velocity — Performance", "Profiling OFF por padrão. Após jogar, volte ao launcher para salvar os últimos 600 frames. Tempos Vulkan são tempos de CPU, não de GPU.")));
+        for (GameOptions.Option option : GameOptions.VELOCITY) {
+            if (option.key.equals(GameOptions.PROFILING) && !BuildConfig.VELOCITY_PROFILING) continue;
+            optionsList.addView(optionRow(option.title, option.label(GameOptions.get(this, option.key)), () -> chooseOption(option)));
+        }
+        if (BuildConfig.VELOCITY_PROFILING)
+            optionsList.addView(optionRow("Export Performance Report", "CSV da última sessão · volte do jogo primeiro", this::exportVelocity));
         optionsList.addView(optionRow("Servidor online", GameOptions.onlineServer(this), this::chooseOnlineServer));
         optionsList.addView(optionRow("Buscar actualizaciones",
                 checkingUpdates ? "Comprobando GitHub…" : "Versión " + ReleaseUpdates.installed(this), () -> checkUpdates(true)));
         optionsList.addView(optionRow("Reportar un problema", "Log completo a GitHub", () -> prepareReport(null)));
+    }
+
+    private void exportVelocity() {
+        File report = new File(getFilesDir(),"velocity-performance.csv");
+        if (!report.isFile()) {
+            message("Project Velocity", "Sem frames registrados. Ative Performance Profiling, jogue e volte ao launcher. Se acabou de voltar, aguarde o snapshot e tente novamente.");
+            return;
+        }
+        startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+                .setType("text/csv").putExtra(Intent.EXTRA_TITLE,"Project-Velocity-performance.csv"), REQUEST_SAVE_VELOCITY);
     }
 
     // ---- Options ---------------------------------------------------------------------------------------
@@ -320,6 +338,21 @@ public final class LauncherActivity extends Activity {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_SAVE_VELOCITY) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                Uri destination = data.getData();
+                worker.execute(() -> {
+                    try (java.io.InputStream input = new java.io.FileInputStream(new File(getFilesDir(), "velocity-performance.csv"));
+                         java.io.OutputStream output = getContentResolver().openOutputStream(destination,"w")) {
+                        if (output == null) throw new java.io.IOException("Destino indisponível");
+                        byte[] buffer = new byte[16384];
+                        for (int n; (n = input.read(buffer)) != -1;) output.write(buffer,0,n);
+                        main.post(() -> message("Project Velocity", "Relatório salvo."));
+                    } catch (Exception error) { main.post(() -> message("Project Velocity",error.toString())); }
+                });
+            }
+            return;
+        }
         if (requestCode == REQUEST_SAVE_REPORT) {
             if (resultCode == RESULT_OK && data != null && data.getData() != null) finishReport(data.getData());
             else pendingReport = null;

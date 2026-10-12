@@ -117,6 +117,9 @@ public final class GameActivity extends NativeActivity {
     private static native void nativeTypeText(String value, boolean replace);
     private static native void nativeLanguage(String language);
     private static native void nativeResolution(int width, int height);
+    private static native void nativeVelocity(boolean profiling,String reportPath,String cachePath);
+    private static native boolean nativeExportVelocity();
+    private static native void nativeFramePacing(boolean experimental);
     private static native void nativeFrameLimit(int framesPerSecond);
     private static native void nativeWidescreen(boolean enabled);
     private static native void nativeOnlineServer(String host);
@@ -191,6 +194,15 @@ public final class GameActivity extends NativeActivity {
         nativeResolution(launch.getIntExtra("renderWidth", size[0]), launch.getIntExtra("renderHeight", size[1]));
         String language = launch.getStringExtra("language");
         nativeLanguage(language != null ? language : GameOptions.language(this));
+        java.io.File cache = new java.io.File(getFilesDir(), "velocity-dxvk-cache");
+        boolean cacheEnabled = GameOptions.get(this, GameOptions.SHADER_CACHE).equals("on");
+        boolean writableCache = cacheEnabled && (cache.isDirectory() || cache.mkdirs());
+        if (cacheEnabled && !writableCache)
+            Toast.makeText(this,"Shader cache indisponível: usando padrão",Toast.LENGTH_LONG).show();
+        nativeFramePacing(GameOptions.get(this,GameOptions.FRAME_PACING).equals("experimental"));
+        nativeVelocity(BuildConfig.VELOCITY_PROFILING && GameOptions.get(this, GameOptions.PROFILING).equals("on"),
+                new java.io.File(getFilesDir(), "velocity-performance.csv").getAbsolutePath(),
+                writableCache ? cache.getAbsolutePath() : "");
         nativeFrameLimit(launch.getIntExtra("frameCap", Integer.parseInt(GameOptions.get(this, GameOptions.FPS))));
         nativeWidescreen(launch.getBooleanExtra("widescreen", GameOptions.get(this, GameOptions.WIDESCREEN).equals("on")));
         String server = launch.getStringExtra("onlineServer");
@@ -262,6 +274,9 @@ public final class GameActivity extends NativeActivity {
         if (touchControls != null) {touchControls.removeCallbacks(updateControlMode);touchControls.releaseAll();}
         if (controlsWindow != null) controlsWindow.dismiss();
         super.onPause();
+        // Snapshot off the UI thread, outside the frame path. Launcher shares filesDir.
+        if (BuildConfig.VELOCITY_PROFILING)
+            new Thread(() -> nativeExportVelocity(), "velocity-export").start();
     }
     @Override protected void onResume() {
         super.onResume();
