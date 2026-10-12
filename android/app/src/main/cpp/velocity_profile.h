@@ -1,0 +1,40 @@
+#pragma once
+#include <cstdint>
+#include <string>
+#ifndef NFS_VELOCITY_PROFILING
+#define NFS_VELOCITY_PROFILING 0
+#endif
+namespace velocity {
+enum class Metric : unsigned { D3D9Sample, Present, TextureDecode, TextureUpload,
+    SchedulerWait, FrameLimiter, VulkanSubmit, VulkanPresent, FenceWait,
+    PipelineCompile, PipelineBind, Count };
+#if NFS_VELOCITY_PROFILING
+bool enabled();
+uint64_t now();
+void record(Metric metric,uint64_t elapsed,uint64_t weight=1);
+void draw();
+void frame();
+void resetFrameClock();
+bool configure(bool enable,const std::string& path);
+bool exportReport();
+class Scope {
+    Metric metric_;uint64_t start_=0,weight_;
+#ifdef __ANDROID__
+    bool trace_=false;
+#endif
+public:
+    explicit Scope(Metric metric,uint64_t weight=1,bool sample=true);
+    ~Scope();
+    Scope(const Scope&)=delete;
+    Scope& operator=(const Scope&)=delete;
+};
+#else
+inline bool enabled(){return false;}
+inline void draw(){}
+inline void frame(){}
+inline void resetFrameClock(){}
+inline bool configure(bool,const std::string&){return false;}
+inline bool exportReport(){return false;}
+class Scope {public: explicit Scope(Metric,uint64_t=1,bool=true) {}};
+#endif
+}
