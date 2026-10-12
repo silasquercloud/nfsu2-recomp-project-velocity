@@ -1,0 +1,32 @@
+name: Publish verified Project Velocity APK
+on:
+  push:
+    branches: [release-upload/project-velocity-0.14.0-velocity.1]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify and publish the existing signed APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          apk=NFSU2-Project-Velocity-ARM64-v0.14.0-velocity.1.apk
+          printf '%s  %s\n' 04ee0a6bf4601ad4f0ae66aded5a9ed0f2cf8932ae2d1042f5fe8d80b4225e58 "$apk" | sha256sum --check
+          test "$(stat -c %s "$apk")" = 68302087
+          cat > /tmp/release-notes.md <<'NOTES'
+          Experimental Project Velocity ARM64 0.14.0-velocity.1, built from the modified port on feature/project-velocity-arm64.
+
+          Includes profiling, GuestMemory and DXT region optimizations, experimental frame pacing, and functional launcher settings. The original game-folder import workflow is preserved. No original game executable or commercial asset files are packaged.
+
+          ARM64 only; Android 10 or newer. Signed with a development/test certificate. This certificate differs from the official app: back up saves before replacing an official installation. Gameplay and installation on a physical Android device have not been validated.
+
+          APK: 68,302,087 bytes
+          SHA-256: 04ee0a6bf4601ad4f0ae66aded5a9ed0f2cf8932ae2d1042f5fe8d80b4225e58
+          Implementation and test report: https://github.com/silasquercloud/nfsu2-recomp-project-velocity/blob/feature/project-velocity-arm64/docs/PROJECT_VELOCITY_PHASE2.md
+          NOTES
+          gh release create v0.14.0-velocity.1 "$apk" --target b04a885722f8f0d39037e31c40ecc0b45cbf04b5 --prerelease --title 'NFSU2 Recompiled — Project Velocity ARM64 0.14.0-velocity.1' --notes-file /tmp/release-notes.md
