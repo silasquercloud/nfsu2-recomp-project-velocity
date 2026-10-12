@@ -1,0 +1,42 @@
+name: Project Velocity component checks
+on:
+  push:
+    branches: [feature/project-velocity-arm64]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  components:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pinned public headers
+        run: |
+          git clone --branch native-1.9.2b https://github.com/Joshua-Ashton/dxvk-native.git ../dxvk-native
+          python3 ports/dxvk_android/prepare.py ../dxvk-native build/dxvk-source
+      - name: Host component tests
+        env:
+          CXX: clang++
+        run: |
+          cmake -S tests/velocity -B build/velocity -G Ninja
+          cmake --build build/velocity --parallel 4
+          ctest --test-dir build/velocity --output-on-failure
+          cmake -S tests/android_memory -B build/memory -G Ninja
+          cmake --build build/memory
+          build/memory/memory_check
+          cmake -S tests/android_graphics -B build/graphics -G Ninja
+          cmake --build build/graphics --parallel 4
+          build/graphics/graphics_memory_check
+          build/graphics/graphics_com_check
+      - name: ARM64 component compilation (not a device test or APK build)
+        run: |
+          python3 - <<'PY'
+          import os, subprocess
+          subprocess.run([os.environ['ANDROID_HOME'] + '/cmdline-tools/latest/bin/sdkmanager',
+                          'ndk;28.2.13676358'], input='y\n' * 100, text=True, check=True)
+          PY
+          cmake -S tests/velocity -B build/arm64 -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$ANDROID_HOME/ndk/28.2.13676358/build/cmake/android.toolchain.cmake" \
+            -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-29 -DANDROID_STL=c++_static
+          cmake --build build/arm64 --parallel 4
