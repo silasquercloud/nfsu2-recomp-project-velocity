@@ -261,3 +261,24 @@ release or a claim that the complete environment/game is ready.
 GitHub denies fork creation with HTTP 403 `Resource not accessible by integration`;
 upstream permissions are read-only, while the selected user repository permits
 branch writes. Publication results are appended after actual GitHub operations.
+
+Publication confirmed:
+
+- Branch: https://github.com/silasquercloud/nfsu2-recomp-project-velocity/tree/feature/project-velocity-arm64
+- Area commits: d6236c1 (profiling), e59df9c (runtime), 86a4f07 (textures),
+  638b0c3 (DXVK), 5b5577d (launcher), 36e0551 (tests/report).
+- Draft review PR: https://github.com/silasquercloud/nfsu2-recomp-project-velocity/pull/1
+  targets `upstream/nfsu2-125fbcf`, a separate branch with the exact original
+  base. The selected user's main was an unrelated README-only history; this
+  review base shows only Velocity changes instead of importing all upstream
+  files into a main PR. Neither main nor upstream main was changed or merged.
+  The user repository is **not an upstream fork**. This PR is a fallback review
+  location, **not a PR submitted to codepdbh/nfsu2-recompiled**.
+- Original fork creation and original-target PR API POST both returned HTTP 403
+  `Resource not accessible by integration`. Original-target submission needs
+  GitHub integration access to create that fork/PR; do not misreport it as done.
+- Remote component CI passed at 36e0551:
+  https://github.com/silasquercloud/nfsu2-recomp-project-velocity/actions/runs/38311691079
+  (host tests and ARM64 component compilation; not APK/gameplay validation).
+- Working tree remained free of untracked game inputs, credentials and binaries.
+  There is no APK download, signing result, file size or SHA-256 to report.
