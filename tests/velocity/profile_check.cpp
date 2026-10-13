@@ -33,8 +33,8 @@ int main(){
         if(line.empty()||line[0]=='#'||line.rfind("frame,",0)==0)continue;
         std::istringstream row(line);std::vector<uint64_t> values;
         while(std::getline(row,line,','))values.push_back(std::stoull(line));
-        require(values.size()==47);require(values[0]==rows+6);require(values[1]>0);
-        require(values[3]==1&&values[5]==448&&values[6]==1&&values[42]==128);++rows;
+        require(values.size()==54);require(values[0]==rows+6);require(values[1]>0);
+        require(values[3]==1&&values[5]==448&&values[6]==1&&values[44]==128);++rows;
     }
     require(rows==600&&metadataSeen&&errorsSeen);
     velocity::resetFrameClock();velocity::frame();

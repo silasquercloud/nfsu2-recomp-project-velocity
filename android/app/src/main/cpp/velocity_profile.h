@@ -8,9 +8,9 @@ namespace velocity {
 enum class Metric : unsigned { D3D9Sample, Present, TextureDecode, TextureUpload,
     SchedulerWait, FrameLimiter, VulkanSubmit, VulkanPresent, FenceWait,
     PipelineCompile, PipelineBind, TextureLock, BufferLock, ResourceWait, CsWait,
-    VulkanAcquire, ShaderTranslate, ImportLookup, Count };
+    VulkanAcquire, ShaderTranslate, ImportLookup, PipelineWait, Count };
 enum class Counter : unsigned { DecodedPixels, CopiedBytes, TextureFallbacks,
-    VulkanErrors, VulkanSuboptimal, SwapchainRecreates, Count };
+    VulkanErrors, VulkanSuboptimal, SwapchainRecreates, PipelineHits, PipelineMisses, PrewarmFailures, CompileTimeouts, Count };
 #if NFS_VELOCITY_PROFILING
 bool enabled();
 uint64_t now();

@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <algorithm>
 #include <cstdint>
 namespace velocity {
 // Completed presentation intervals, not display refresh or a GPU timestamp.
@@ -21,6 +22,15 @@ public:
         if(ns-windowStart_<500000000ull)return false;
         fps_=double(windowFrames_)*1e9/double(ns-windowStart_);
         windowStart_=ns;windowFrames_=0;return true;
+    }
+    struct Distribution {double p50=0,p95=0,p99=0,low1=0;};
+    Distribution distribution()const {
+        if(!used_)return {};
+        auto ordered=intervals_;std::sort(ordered.begin(),ordered.begin()+used_);
+        auto percentile=[&](unsigned p){return double(ordered[(used_*p+99)/100-1])/1e6;};
+        const unsigned tail=std::max(1u,(used_+99)/100);uint64_t total=0;
+        for(unsigned i=used_-tail;i<used_;++i)total+=ordered[i];
+        return {percentile(50),percentile(95),percentile(99),total?double(tail)*1e9/double(total):0};
     }
     double fps()const{return fps_;}
     double averageFps()const{return sum_?double(used_)*1e9/double(sum_):0;}

@@ -44,6 +44,7 @@ std::string probe(const char* hooks, const char* temp, const char* directory, co
     LOAD(vkDestroyInstance);
     LOAD(vkEnumeratePhysicalDevices);
     LOAD(vkGetPhysicalDeviceProperties);
+    LOAD(vkGetPhysicalDeviceMemoryProperties);
     LOAD(vkGetPhysicalDeviceFeatures);
     LOAD(vkGetPhysicalDeviceFormatProperties);
     LOAD(vkGetPhysicalDeviceQueueFamilyProperties);
@@ -155,6 +156,14 @@ std::string probe(const char* hooks, const char* temp, const char* directory, co
         << ",\"clipDistance\":" << (features.shaderClipDistance?"true":"false")
         << ",\"geometryShader\":" << (features.geometryShader?"true":"false")
         << ",\"sampleRateShading\":" << (features.sampleRateShading?"true":"false") << "}";
+    VkPhysicalDeviceMemoryProperties memory{};vkGetPhysicalDeviceMemoryProperties(gpu,&memory);
+    uint64_t deviceHeap=0;for(uint32_t i=0;i<memory.memoryHeapCount;++i)if(memory.memoryHeaps[i].flags&VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)deviceHeap+=memory.memoryHeaps[i].size;
+    out << ",\"deviceLocalHeapBytes\":" << deviceHeap << ",\"timestampPeriodNs\":" << props.limits.timestampPeriod;
+    out << ",\"timestampValidBits\":[";for(size_t i=0;i<families.size();++i)out << (i?",":"") << families[i].timestampValidBits;
+    out << "],\"pipelineCapabilities\":{\"graphicsPipelineLibraryAdvertised\":" << (hasExtension("VK_EXT_graphics_pipeline_library")?"true":"false")
+        << ",\"cacheControlAdvertised\":" << (hasExtension("VK_EXT_pipeline_creation_cache_control")?"true":"false")
+        << ",\"pipelineBinaryAdvertised\":" << (hasExtension("VK_KHR_pipeline_binary")?"true":"false")
+        << ",\"advancedBackendPathsImplemented\":false}";
     out << ",\"extensions\":[";
     for(size_t i=0;i<extensions.size();++i)out << (i?",":"") << json(extensions[i]);
     out << "],\"formats\":[";
