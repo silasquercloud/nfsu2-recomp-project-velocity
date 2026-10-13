@@ -29,6 +29,8 @@ else()
 endif()
 add_library(dxvk_android ${DXVK_LIBRARY_TYPE} ${UTIL} ${GRAPHICS} android_wsi.cpp)
 target_compile_features(dxvk_android PRIVATE cxx_std_17)
+get_filename_component(VELOCITY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+target_include_directories(dxvk_android PRIVATE "${VELOCITY_ROOT}/android/app/src/main/cpp")
 if(NFS_VELOCITY_PROFILING)
   # Profiling symbols are provided by the application, not standalone query tests.
   get_filename_component(VELOCITY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
