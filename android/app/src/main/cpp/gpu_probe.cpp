@@ -145,6 +145,24 @@ std::string probe(const char* hooks, const char* temp, const char* directory, co
         << ",\"bcTextures\":" << (bc ? "true" : "false")
         << ",\"compatible\":" << (missing.empty() ? "true" : "false") << ",\"missing\":[";
     for (size_t i = 0; i < missing.size(); ++i) out << (i ? "," : "") << json(missing[i]);
+    out << "],\"deviceId\":" << props.deviceID << ",\"driverVersion\":" << props.driverVersion;
+    out << ",\"limits\":{\"maxImageDimension2D\":" << props.limits.maxImageDimension2D
+        << ",\"maxBoundDescriptorSets\":" << props.limits.maxBoundDescriptorSets
+        << ",\"maxPerStageDescriptorSamplers\":" << props.limits.maxPerStageDescriptorSamplers
+        << ",\"maxUniformBufferRange\":" << props.limits.maxUniformBufferRange
+        << ",\"maxMemoryAllocationCount\":" << props.limits.maxMemoryAllocationCount << "}";
+    out << ",\"features\":{\"multiViewport\":" << (features.multiViewport?"true":"false")
+        << ",\"clipDistance\":" << (features.shaderClipDistance?"true":"false")
+        << ",\"geometryShader\":" << (features.geometryShader?"true":"false")
+        << ",\"sampleRateShading\":" << (features.sampleRateShading?"true":"false") << "}";
+    out << ",\"extensions\":[";
+    for(size_t i=0;i<extensions.size();++i)out << (i?",":"") << json(extensions[i]);
+    out << "],\"formats\":[";
+    unsigned formatIndex=0;
+    for(VkFormat format:{VK_FORMAT_BC1_RGBA_UNORM_BLOCK,VK_FORMAT_BC2_UNORM_BLOCK,VK_FORMAT_BC3_UNORM_BLOCK,VK_FORMAT_R8G8B8A8_UNORM,VK_FORMAT_D24_UNORM_S8_UINT,VK_FORMAT_D32_SFLOAT}){
+        VkFormatProperties fp{};vkGetPhysicalDeviceFormatProperties(gpu,format,&fp);
+        out << (formatIndex++?",":"") << "{\"format\":" << int(format) << ",\"optimalFeatures\":" << fp.optimalTilingFeatures << "}";
+    }
     out << "]}";
     vkDestroyInstance(instance, nullptr);
     return out.str();

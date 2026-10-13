@@ -15,7 +15,7 @@ constexpr const char* names[]={"d3d9_sample_estimate","d3d9_present","texture_de
     "texture_upload_copy","scheduler_wait","frame_limiter","vulkan_submit_host",
     "vulkan_present_host","fence_wait_host","pipeline_compile_host","pipeline_bind",
     "texture_lock_host","buffer_lock_host","resource_wait_host","cs_sync_host",
-    "vulkan_acquire_host","shader_translate_host"};
+    "vulkan_acquire_host","shader_translate_host","import_lookup_estimate"};
 constexpr const char* counterNames[]={"decoded_pixels","copied_bytes","texture_fallbacks",
     "vulkan_errors","vulkan_suboptimal","swapchain_recreates"};
 std::atomic<bool> active{false};
@@ -57,16 +57,14 @@ void metadata(const std::string& value){
     for(char c:value)deviceMetadata+=(c=='\n'||c=='\r')?' ':c;
     deviceMetadata+='\n';
 }
-Scope::Scope(Metric metric,uint64_t weight,bool sample):metric_(metric),weight_(weight){
-    if(!sample||!enabled())return;
+void Scope::begin(){
     start_=now();
 #ifdef __ANDROID__
     trace_=ATrace_isEnabled();
-    if(trace_)ATrace_beginSection(names[static_cast<unsigned>(metric)]);
+    if(trace_)ATrace_beginSection(names[static_cast<unsigned>(metric_)]);
 #endif
 }
-Scope::~Scope(){
-    if(!start_)return;
+void Scope::finish(){
 #ifdef __ANDROID__
     if(trace_)ATrace_endSection();
 #endif
@@ -106,9 +104,10 @@ bool exportReport(){
     if(!enabled()||path.empty()||!count)return false;
     const std::string temporary=path+".tmp";
     FILE* out=std::fopen(temporary.c_str(),"w");if(!out)return false;
-    std::fprintf(out,"# Project Velocity 0.14.0-velocity.2; last 600 completed presentation intervals; timing units ns\n"
+    std::fprintf(out,"# Project Velocity 0.14.0-velocity.3; last 600 completed presentation intervals; timing units ns\n"
         "# cpu_process includes all native/DXVK threads; host durations are NOT GPU timestamps\n"
         "# d3d9 estimated from 1/64 calls, excluding Present; asynchronous metrics use completion interval\n"
+        "# import lookup estimated from 1/256 calls; not full HLE execution\n"
         "# nested/parallel metrics overlap; no exact guest runtime attribution; first interval discarded\n"
         "# vulkan_present_host measures vkQueuePresentKHR; acquisition measured separately\n");
     std::fputs(metadata.c_str(),out);

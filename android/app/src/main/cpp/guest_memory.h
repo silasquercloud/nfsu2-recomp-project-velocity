@@ -48,6 +48,7 @@ public:
     GuestMemory(const GuestMemory&) = delete;
     GuestMemory& operator=(const GuestMemory&) = delete;
     ~GuestMemory() { if (base_ != MAP_FAILED) munmap(base_, size_t(size)); }
+    uint64_t committedBytes()const{uint64_t bytes=0;for(const auto& region:committed_)bytes+=region.second-region.first;return bytes;}
     void* base() const { return base_; }
     bool readable(uint32_t va,uint64_t bytes)const{
         return accessible(va,bytes,false);

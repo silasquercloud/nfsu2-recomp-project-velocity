@@ -8,7 +8,7 @@ namespace velocity {
 enum class Metric : unsigned { D3D9Sample, Present, TextureDecode, TextureUpload,
     SchedulerWait, FrameLimiter, VulkanSubmit, VulkanPresent, FenceWait,
     PipelineCompile, PipelineBind, TextureLock, BufferLock, ResourceWait, CsWait,
-    VulkanAcquire, ShaderTranslate, Count };
+    VulkanAcquire, ShaderTranslate, ImportLookup, Count };
 enum class Counter : unsigned { DecodedPixels, CopiedBytes, TextureFallbacks,
     VulkanErrors, VulkanSuboptimal, SwapchainRecreates, Count };
 #if NFS_VELOCITY_PROFILING
@@ -28,9 +28,11 @@ class Scope {
 #ifdef __ANDROID__
     bool trace_=false;
 #endif
+    void begin();
+    void finish();
 public:
-    explicit Scope(Metric metric,uint64_t weight=1,bool sample=true);
-    ~Scope();
+    explicit Scope(Metric metric,uint64_t weight=1,bool sample=true):metric_(metric),weight_(weight){if(sample&&enabled())begin();}
+    ~Scope(){if(start_)finish();}
     Scope(const Scope&)=delete;
     Scope& operator=(const Scope&)=delete;
 };

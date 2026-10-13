@@ -27,3 +27,5 @@ void setGuestResolution(unsigned width,unsigned height);
 void setGuestFrameLimit(unsigned framesPerSecond);
 
 void setGuestExperimentalFramePacing(bool enabled);
+
+uint64_t guestCommittedBytes();

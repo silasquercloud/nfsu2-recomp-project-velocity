@@ -620,6 +620,10 @@ extern "C" recomp_func_t recomp_lookup_manual(uint32_t va) {
     return nfs_override_lookup(va);
 }
 extern "C" recomp_func_t recomp_lookup_import(uint32_t va) {
+#if NFS_VELOCITY_PROFILING
+    static uint64_t lookupSample=0;
+    velocity::Scope timing(velocity::Metric::ImportLookup,256,velocity::enabled()&&((++lookupSample&255u)==0));
+#endif
     checkGuestProgress();
     if(va>=soundMethodBase+0x1000&&va<soundMethodBase+0x3000&&!(va%16)){soundToken=va;return soundDispatch;}
     if(va>=inputMethodBase+0x1000&&va<inputMethodBase+0x5000&&!(va%16)){inputToken=va;return inputDispatch;}  // kinds 1-4: DirectInput, keyboard, mouse, gamepad
@@ -795,3 +799,5 @@ void setGuestLanguage(const char* language){
 }
 
 void setGuestExperimentalFramePacing(bool enabled){experimentalFramePacing.store(enabled,std::memory_order_relaxed);}
+
+uint64_t guestCommittedBytes(){std::lock_guard<MachineMutex> lock(machine);return memory?memory->committedBytes():0;}
