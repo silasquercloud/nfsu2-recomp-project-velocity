@@ -333,3 +333,7 @@ import and private generated sources are preserved; no Android FPS gain is claim
 workers com prioridades, espera bloqueante, percentis/1% low, perfis conservadores
 e download verificado de pacotes completos DXVK/runtime. Troca isolada de módulos,
 GPU timing e validação física permanecem pendentes; sem promessa de FPS.
+
+## Velocity.5
+
+[Diagnóstico D3D9, reutilização de locks, PT-BR e bloqueio DXVK 1.10.3](docs/PROJECT_VELOCITY_V5_REPORT.md). Sem ganho de FPS comprovado em aparelho.
