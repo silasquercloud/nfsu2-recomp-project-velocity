@@ -87,12 +87,13 @@ jobs:
           Initially uploaded as a private draft; publication depends on explicit --public developer instruction.
           ARM64 Release build with development signature matching Velocity .1. Gameplay/FPS on Adreno 610, Mali G52 and other physical devices remain unverified.
           SHA-256: DIGEST
-          Report: https://github.com/REPOSITORY/blob/feature/project-velocity-arm64/docs/PROJECT_VELOCITY_V3_REPORT.md
+          Report: https://github.com/REPOSITORY/blob/feature/project-velocity-arm64/REPORTPATH
           NOTES
           gh release create vVELOCITYVERSION "$clearapk" --draft --prerelease --target SOURCECOMMIT --title 'Project Velocity ARM64 VELOCITYVERSION — Universal Performance Overhaul' --notes-file /tmp/notes.md
 '''
     replacements={'BRANCH':branch,'APKNAME':apk.name,'DIGEST':digest,'APKSIZE':str(apk.stat().st_size),
-                  'REPOSITORY':args.repo,'SOURCECOMMIT':source,'VELOCITYVERSION':args.version}
+                  'REPOSITORY':args.repo,'SOURCECOMMIT':source,'VELOCITYVERSION':args.version,
+                  'REPORTPATH':'docs/PROJECT_VELOCITY_V'+args.version.rsplit('.',1)[-1]+'_REPORT.md'}
     for key,value in replacements.items():workflow=workflow.replace(key,value)
     (transport/'.github/workflows/private-upload.yml').write_text(workflow)
     (transport/'README.md').write_text('Temporary encrypted transport to a private GitHub draft release. No plaintext APK or private key is committed.\n')

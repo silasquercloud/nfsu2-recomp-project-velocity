@@ -326,3 +326,10 @@ See [the v3 technical report](docs/PROJECT_VELOCITY_V3_REPORT.md) for the measur
 host profiling overhead, device-specific pipeline persistence, native HUD, both
 landscape directions, tests and hardware validation limitations. Existing game
 import and private generated sources are preserved; no Android FPS gain is claimed.
+
+## Async compilation and diagnostics — 0.14.0-velocity.4
+
+[Relatório da .4](docs/PROJECT_VELOCITY_V4_REPORT.md): compilação DXSO/pipelines em
+workers com prioridades, espera bloqueante, percentis/1% low, perfis conservadores
+e download verificado de pacotes completos DXVK/runtime. Troca isolada de módulos,
+GPU timing e validação física permanecem pendentes; sem promessa de FPS.

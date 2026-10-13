@@ -16,8 +16,8 @@ import sys
 import tempfile
 import zipfile
 
-VERSION = "0.14.0-velocity.3"
-VERSION_CODE = "17"
+VERSION = "0.14.0-velocity.4"
+VERSION_CODE = "18"
 PACKAGE = "com.nfsu2.androidevolved"
 APK_NAME = f"NFSU2-Project-Velocity-ARM64-v{VERSION}.apk"
 LIBRARIES = {
@@ -79,7 +79,7 @@ def inspect_contents(apk, require_velocity=True):
                 raise BuildBlocked("Game-file entry must not be packaged: " + name)
         if require_velocity:
             game = archive.read(native["libnfsu2_android.so"])
-            if b"Project Velocity 0.14.0-velocity.3" not in game:
+            if b"Project Velocity 0.14.0-velocity.4" not in game:
                 raise BuildBlocked("Native Velocity profiling marker missing; refuse an unchanged official library")
     return sorted(native)
 

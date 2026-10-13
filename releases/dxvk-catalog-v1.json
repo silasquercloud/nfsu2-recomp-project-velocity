@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "packages": [
+    {
+      "category": "Legacy",
+      "version": "0.14.0-velocity.3",
+      "versionCode": 17,
+      "backend": "DXVK Native 1.9.2b + Velocity.3 patches",
+      "validation": "Automated build/package checks; device performance unvalidated",
+      "abi": "arm64-v8a",
+      "package": "com.nfsu2.androidevolved",
+      "bytes": 62110024,
+      "sha256": "1f21c3bd5dd6c8ad367d018110149167281407d1018331e19ba02ee28858757c",
+      "url": "https://github.com/silasquercloud/nfsu2-recomp-project-velocity/releases/download/v0.14.0-velocity.3/NFSU2-Project-Velocity-ARM64-v0.14.0-velocity.3.apk"
+    },
+    {
+      "category": "Experimental",
+      "version": "0.14.0-velocity.4",
+      "versionCode": 18,
+      "backend": "DXVK Native 1.9.2b + Velocity.4 async patches",
+      "validation": "Automated build/package checks; device performance unvalidated",
+      "abi": "arm64-v8a",
+      "package": "com.nfsu2.androidevolved",
+      "bytes": 62210656,
+      "sha256": "346476c9b074a8a7ee1ac8144fdeb95c92435382c6b44159575b608963e87a34",
+      "url": "https://github.com/silasquercloud/nfsu2-recomp-project-velocity/releases/download/v0.14.0-velocity.4/NFSU2-Project-Velocity-ARM64-v0.14.0-velocity.4.apk"
+    }
+  ]
+}

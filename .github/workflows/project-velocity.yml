@@ -38,6 +38,9 @@ jobs:
             --output build/official-baseline.apk
           printf '%s  %s\n' e04752c50d3d396caa34010191d95698ff480e056c9592c3d27542554af2f9a2 build/official-baseline.apk | sha256sum --check
           VELOCITY_OFFICIAL_APK=build/official-baseline.apk python3 tests/velocity/test_apk_build.py -v
+          mkdir -p build/java-policy
+          javac -d build/java-policy android/app/src/main/java/com/nfsu2/androidevolved/DxvkPackagePolicy.java tests/velocity/DxvkPackagePolicyCheck.java
+          java -cp build/java-policy com.nfsu2.androidevolved.DxvkPackagePolicyCheck build/official-baseline.apk
       - name: ARM64 component compilation (not a device test or APK build)
         run: |
           python3 - <<'PY'

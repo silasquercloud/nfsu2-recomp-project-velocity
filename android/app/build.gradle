@@ -8,8 +8,8 @@ android {
         applicationId 'com.nfsu2.androidevolved'
         minSdk 29
         targetSdk 35
-        versionCode 17
-        versionName '0.14.0-velocity.3'
+        versionCode 18
+        versionName '0.14.0-velocity.4'
         buildConfigField 'boolean', 'VELOCITY_PROFILING', velocityProfiling.toString()
         manifestPlaceholders = [velocityProfileable: velocityProfiling.toString()]
         // -PnfsAbi=armeabi-v7a builds the separate 32-bit APK.
