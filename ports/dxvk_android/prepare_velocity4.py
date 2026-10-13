@@ -48,6 +48,7 @@ def apply(root):
         body=s.index(') {',start)+3
         end=s.index(f'  void Dxvk{kind.title()}Pipeline::compilePipeline(',body)
         code=f'''
+    velocity::SlowPipeline diagnostic("{kind}", velocity::enabled() ? m_shaders.hash() : 0);
     {{ std::unique_lock<std::mutex> lock(m_mutex, std::defer_lock);
       if (!lock.try_lock()) {{ velocity::Scope wait(velocity::Metric::PipelineWait); lock.lock(); }}
       auto ready = {find};

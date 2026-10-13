@@ -19,7 +19,10 @@ constexpr const char* names[]={"d3d9_sample_estimate","d3d9_present","texture_de
     "texture_lock_host","buffer_lock_host","resource_wait_host","cs_sync_host",
     "vulkan_acquire_host","shader_translate_host","import_lookup_estimate","pipeline_ready_wait_host"};
 constexpr const char* counterNames[]={"decoded_pixels","copied_bytes","texture_fallbacks",
-    "vulkan_errors","vulkan_suboptimal","swapchain_recreates","pipeline_object_hits","pipeline_object_misses","prewarm_failures","compiler_wait_over_2s"};
+    "vulkan_errors","vulkan_suboptimal","swapchain_recreates","pipeline_object_hits","pipeline_object_misses","prewarm_failures","compiler_wait_over_2s","lock_scratch_reuse","lock_scratch_allocations","lock_read_copy_bytes"};
+struct Operation {std::atomic<uint64_t> calls{0},samples{0},ns{0},maxNs{0};};
+std::array<Operation,16*128> operations{};
+std::atomic<unsigned> slowPipelines{0};
 std::atomic<bool> active{false};
 std::array<std::atomic<uint64_t>,metrics> times{},counts{};
 std::array<std::atomic<uint64_t>,counters> events{},totals{};
@@ -36,6 +39,22 @@ uint64_t clockNs(clockid_t id){timespec t{};if(clock_gettime(id,&t))return 0;ret
 }
 bool enabled(){return active.load(std::memory_order_relaxed);}
 uint64_t now(){return clockNs(CLOCK_MONOTONIC);}
+SlowPipeline::~SlowPipeline(){if(!start_)return;auto elapsed=now()-start_;
+    if(elapsed>2000000&&slowPipelines.fetch_add(1,std::memory_order_relaxed)<32)
+        metadata(std::string("slow_pipeline_kind=")+kind_+"; shader_group_hash="+std::to_string(group_)+"; readiness_host_ns="+std::to_string(elapsed));
+}
+D3D9Call::D3D9Call(unsigned kind,unsigned method){
+    if(!enabled()||kind>=16||method>=128)return;
+    index_=kind*128+method;
+    auto n=operations[index_].calls.fetch_add(1,std::memory_order_relaxed);
+    // Time the first 16 calls and then 1/64 per operation, avoiding global
+    // sampling aliasing that could completely miss a recurring D3D9 method.
+    if(n<16||(n&63)==0)start_=now();
+}
+D3D9Call::~D3D9Call(){if(start_){auto elapsed=now()-start_;auto& o=operations[index_];
+    o.samples.fetch_add(1,std::memory_order_relaxed);o.ns.fetch_add(elapsed,std::memory_order_relaxed);
+    auto previous=o.maxNs.load(std::memory_order_relaxed);while(previous<elapsed&&!o.maxNs.compare_exchange_weak(previous,elapsed,std::memory_order_relaxed)){}
+}}
 void record(Metric metric,uint64_t elapsed,uint64_t weight){
     const auto index=static_cast<size_t>(metric);
     times[index].fetch_add(elapsed*weight,std::memory_order_relaxed);
@@ -78,7 +97,8 @@ bool configure(bool enable,const std::string& path){
     // Startup only, before guest threads. Do not reconfigure while scopes run.
     active.store(false,std::memory_order_relaxed);
     std::lock_guard<std::mutex> lock(historyMutex);
-    reportPath=path;deviceMetadata.clear();used=cursor=0;lastWall=lastCpu=lastThreadCpu=sequence=0;
+    for(auto& o:operations){o.calls=0;o.samples=0;o.ns=0;o.maxNs=0;}
+    slowPipelines=0;reportPath=path;deviceMetadata.clear();used=cursor=0;lastWall=lastCpu=lastThreadCpu=sequence=0;
     for(size_t i=0;i<metrics;++i){times[i]=0;counts[i]=0;}draws=0;
     for(size_t i=0;i<counters;++i){events[i]=0;totals[i]=0;}
     // Remove a previous run so a no-frame run cannot export stale measurements.
@@ -108,7 +128,7 @@ bool exportReport(){
     if(!enabled()||path.empty()||!count)return false;
     const std::string temporary=path+".tmp";
     FILE* out=std::fopen(temporary.c_str(),"w");if(!out)return false;
-    std::fprintf(out,"# Project Velocity 0.14.0-velocity.4; last 600 completed presentation intervals; timing units ns\n"
+    std::fprintf(out,"# Project Velocity 0.14.0-velocity.5; last 600 completed presentation intervals; timing units ns\n"
         "# cpu_process includes all native/DXVK threads; host durations are NOT GPU timestamps\n"
         "# d3d9 estimated from 1/64 calls, excluding Present; asynchronous metrics use completion interval\n"
         "# import lookup estimated from 1/256 calls; not full HLE execution\n"
@@ -128,6 +148,12 @@ bool exportReport(){
     std::fputs("# pipeline_object_hits/misses refer to DXVK in-memory objects; opaque driver cache hits unavailable\n"
         "# gpu_execution_ns=unavailable; timestamp support alone does not measure execution\n",out);
     std::fputs(metadata.c_str(),out);
+    std::fputs("# d3d9_op=kind,method,calls,samples,sampled_host_ns,sampled_max_host_ns; session totals, not GPU time; overlaps frame metrics\n",out);
+    for(unsigned i=0;i<operations.size();++i){auto& o=operations[i];if(o.calls.load())
+        std::fprintf(out,"# d3d9_op=%u,%u,%llu,%llu,%llu,%llu\n",i/128,i%128,
+            (unsigned long long)o.calls.load(),(unsigned long long)o.samples.load(),
+            (unsigned long long)o.ns.load(),(unsigned long long)o.maxNs.load());}
+
     for(size_t i=0;i<counters;++i)std::fprintf(out,"# session_%s=%llu\n",counterNames[i],(unsigned long long)totals[i].load(std::memory_order_relaxed));
     std::fputs("frame,wall_ns,cpu_process_ns,draw_calls,over_33ms",out);
     for(auto name:names)std::fprintf(out,",%s_ns,%s_samples",name,name);

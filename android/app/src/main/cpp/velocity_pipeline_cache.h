@@ -16,7 +16,7 @@ inline bool validPipelineCache(const uint8_t* p,size_t n,const PipelineIdentity&
         cacheWord(p+12)==key.device&&!std::memcmp(p+16,key.uuid,16);
 }
 inline std::string pipelineCacheName(const PipelineIdentity& key){
-    char prefix[96];std::snprintf(prefix,sizeof prefix,"velocity-vk1-%08x-%08x-%08x-%08x-",key.vendor,key.device,key.driver,key.api);
+    char prefix[96];std::snprintf(prefix,sizeof prefix,"velocity-native192b-v5-%08x-%08x-%08x-%08x-",key.vendor,key.device,key.driver,key.api);
     std::string name=prefix;
     constexpr char digits[]="0123456789abcdef";
     for(uint8_t b:key.uuid){name+=digits[b>>4];name+=digits[b&15];}
