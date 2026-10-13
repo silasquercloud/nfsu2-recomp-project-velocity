@@ -205,4 +205,13 @@
     <string name="runtime_call_missing" formatted="false">"Unsupported runtime call: "</string>
     <string name="network_unimplemented" formatted="false">"Unsupported network operation: "</string>
     <string name="custom_driver_failed" formatted="false">"Could not load the selected Vulkan driver. Select the system driver in the launcher. Library: "</string>
+    <string name="velocity4_clear_shader_cache_title">Clear shader cache?</string>
+    <string name="velocity4_clear_shader_cache_body">Clears only DXVK state and pipeline caches at the next game launch. The next run may stutter while rebuilding pipelines.</string>
+    <string name="velocity4_dxvk_manager_title">DXVK Manager</string>
+    <string name="velocity4_dxvk_manager_body">Current: DXVK Native 1.9.2b + Velocity patches, built into the native runtime. Downloads are complete, signed port APKs. Android confirms installation; standalone DXVK DLLs are incompatible.\n\nAuto keeps the installed package: no device-tested faster alternative is known. Stable: no hardware-validated build listed. Legacy and Experimental contain only published packages.</string>
+    <string name="velocity4_dxvk_packages_title">Matched DXVK / runtime packages</string>
+    <string name="velocity4_dxvk_package_verify_body">Download and verify the complete matched package. Native libraries, dependencies, SHA-256, package identity and signing certificate are checked before the installer opens.\n\n</string>
+    <string name="velocity4_dxvk_download_title">Download / verify package</string>
+    <string name="velocity4_dxvk_verified_title">Package verified</string>
+    <string name="velocity4_dxvk_verified_body">SHA-256, ARM64 libraries and signature match. Android will confirm installation.</string>
 </resources>

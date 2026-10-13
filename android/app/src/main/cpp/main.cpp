@@ -416,3 +416,10 @@ extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nat
 extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeSurfaceLayout(JNIEnv*,jclass,jint width,jint height,jint left,jint top){
     if(width>0&&height>0)dxvkAndroidSurfaceLayout(width,height,std::max(0,int(left)),std::max(0,int(top)));
 }
+
+extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeShaderPolicy(
+    JNIEnv* env,jclass,jstring mode,jstring workers,jstring prewarm,jstring profile){
+    const char* names[]={"NFS_VELOCITY_ASYNC","NFS_VELOCITY_WORKERS","NFS_VELOCITY_PREWARM","NFS_VELOCITY_GRAPHICS_PROFILE"};
+    jstring values[]={mode,workers,prewarm,profile};
+    for(unsigned i=0;i<4;++i){const char* text=env->GetStringUTFChars(values[i],nullptr);if(text){setenv(names[i],text,1);env->ReleaseStringUTFChars(values[i],text);}}
+}

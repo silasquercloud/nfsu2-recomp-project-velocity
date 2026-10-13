@@ -62,7 +62,12 @@ final class GameOptions {
 
     static final String PROFILING="velocity_profiling", SHADER_CACHE="velocity_shader_cache", FRAME_PACING="velocity_frame_pacing";
     static final String HUD="velocity_hud", ORIENTATION="screen_orientation";
+    static final String ASYNC="shader_async", WORKERS="shader_workers", PREWARM="shader_prewarm", PROFILE="graphics_profile";
     static final Option[] VELOCITY = {
+        new Option(PROFILE,"Graphics profile","balanced",new String[]{"compatibility","balanced","performance","experimental"},new String[]{"Universal compatibility · one auto worker","Balanced · conservative auto workers","Performance · parallel presentation","Experimental · up to four auto workers"}),
+        new Option(ASYNC,"Async shader compilation","auto",new String[]{"auto","on","off"},new String[]{"Auto · conservative worker budget","On · required pipelines prioritized","Off · synchronous fallback"}),
+        new Option(WORKERS,"Shader workers","0",new String[]{"0","1","2","3","4"},new String[]{"Auto","1","2","3","4"}),
+        new Option(PREWARM,"Pipeline prewarming","on",new String[]{"on","off"},new String[]{"On · known states as shaders load","Off"}),
         new Option(HUD,"Performance HUD","compact",new String[]{"off","compact","detailed"},new String[]{"Off","Compact · FPS / GPU / Vulkan","Detailed · timings / pipelines / memory"}),
         new Option(ORIENTATION,"Screen orientation","auto",new String[]{"auto","normal","reverse"},new String[]{"Automatic · both landscape directions","Landscape","Reverse landscape"}),
         new Option(FRAME_PACING,R.string.frame_pacing,"default",new String[]{"default","experimental"},new int[]{R.string.pacing_default,R.string.pacing_experimental}),

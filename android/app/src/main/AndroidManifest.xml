@@ -1,10 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-feature android:name="android.hardware.vulkan.version" android:version="0x00401000" android:required="true" />
     <application android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="false">
+        <provider android:name=".VelocityApkProvider" android:authorities="${applicationId}.velocity.apks" android:exported="false" android:grantUriPermissions="true" />
         <profileable android:shell="${velocityProfileable}" />
         <activity android:name=".GameActivity" android:exported="true" android:process=":game"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|density" android:screenOrientation="userLandscape">

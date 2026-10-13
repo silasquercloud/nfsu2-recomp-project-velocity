@@ -188,6 +188,13 @@ public final class LauncherActivity extends Activity {
     private void refreshOptions() {
         optionsList.removeAllViews();
         optionsList.addView(optionRow(getString(R.string.ui_language), launcherLocaleLabel(), this::chooseLauncherLocale));
+        optionsList.addView(optionRow("Graphics · DXVK Manager", "Verified matched runtime packages", () -> new DxvkManager(this,this::refreshOptions).show()));
+        optionsList.addView(optionRow("Pipeline cache", "Clear on next game launch", () -> {
+            new AlertDialog.Builder(this).setTitle(getString(R.string.velocity4_clear_shader_cache_title)).setMessage(getString(R.string.velocity4_clear_shader_cache_body))
+                .setPositiveButton("Clear",(dialog,which)->{try{new File(getFilesDir(),"velocity-clear-cache").createNewFile();}catch(Exception error){message("Cache",error.getMessage());}})
+                .setNegativeButton(android.R.string.cancel,null).show();
+        }));
+        optionsList.addView(optionRow("Shader compilation statistics", "Export CSV · compile rate / waits / cache lookups", this::exportVelocity));
         GpuDrivers.Driver driver = GpuDrivers.selected(this);
         // Custom drivers (libadrenotools) exist only in the 64-bit build.
         if (android.os.Process.is64Bit())

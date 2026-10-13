@@ -118,6 +118,7 @@ public final class GameActivity extends NativeActivity {
     private static native void nativeLanguage(String language);
     private static native void nativeResolution(int width, int height);
     private static native void nativeHud(int mode);
+    private static native void nativeShaderPolicy(String mode,String workers,String prewarm,String profile);
     private static native void nativeSurfaceLayout(int width,int height,int left,int top);
     private static native void nativeVelocity(boolean profiling,String reportPath,String metadata,String cachePath);
     private static native boolean nativeExportVelocity();
@@ -202,10 +203,22 @@ public final class GameActivity extends NativeActivity {
         String language = launch.getStringExtra("language");
         nativeLanguage(language != null ? language : GameOptions.language(this));
         java.io.File cache = new java.io.File(getFilesDir(), "velocity-dxvk-cache");
+        java.io.File clearRequest=new java.io.File(getFilesDir(),"velocity-clear-cache");
+        if(clearRequest.isFile()){
+            boolean cleared=true;java.io.File[] files=cache.listFiles();
+            if(files!=null)for(java.io.File file:files)if(file.isFile()&&!file.delete())cleared=false;
+            if(cleared)clearRequest.delete();else Toast.makeText(this,"Some pipeline caches could not be removed",Toast.LENGTH_LONG).show();
+        }
+        java.io.File health=new java.io.File(getFilesDir(),"velocity-v4-running");
+        boolean recover=health.isFile();
+        if(recover)Toast.makeText(this,"Previous game session ended unexpectedly: using synchronous shader recovery for this launch",Toast.LENGTH_LONG).show();
+        try{health.createNewFile();}catch(java.io.IOException ignored){}
         boolean cacheEnabled = GameOptions.get(this, GameOptions.SHADER_CACHE).equals("on");
         boolean writableCache = cacheEnabled && (cache.isDirectory() || cache.mkdirs());
         if (cacheEnabled && !writableCache)
             Toast.makeText(this,UiText.t(GameActivity.this, R.string.cache_unavailable),Toast.LENGTH_LONG).show();
+        nativeShaderPolicy(recover?"off":GameOptions.get(this,GameOptions.ASYNC),GameOptions.get(this,GameOptions.WORKERS),
+                recover?"off":GameOptions.get(this,GameOptions.PREWARM),recover?"compatibility":GameOptions.get(this,GameOptions.PROFILE));
         nativeHud(GameOptions.get(this,GameOptions.HUD).equals("detailed")?2:GameOptions.get(this,GameOptions.HUD).equals("compact")?1:0);
         nativeFramePacing(GameOptions.get(this,GameOptions.FRAME_PACING).equals("experimental"));
         nativeVelocity(BuildConfig.VELOCITY_PROFILING && GameOptions.get(this, GameOptions.PROFILING).equals("on"),
@@ -217,7 +230,9 @@ public final class GameActivity extends NativeActivity {
         String server = launch.getStringExtra("onlineServer");
         nativeOnlineServer(GameOptions.validServer(server) ? server : GameOptions.onlineServer(this));
         nativeMinimapTop(launch.getBooleanExtra("minimapTop", GameOptions.get(this, GameOptions.MINIMAP).equals("top")));
-        nativeBackBuffers(launch.getIntExtra("backBuffers", Integer.parseInt(GameOptions.get(this, GameOptions.LATENCY))));
+        String graphicsProfile=recover?"compatibility":GameOptions.get(this,GameOptions.PROFILE);
+        nativeBackBuffers(graphicsProfile.equals("compatibility")?1:graphicsProfile.equals("performance")?2:
+                launch.getIntExtra("backBuffers", Integer.parseInt(GameOptions.get(this, GameOptions.LATENCY))));
         nativeCpuTextures(launch.getBooleanExtra("cpuTextures", GameOptions.get(this, GameOptions.TEXTURES).equals("cpu")));
         String[] loader = launch.getStringArrayExtra("driverLoader");
         if (loader == null || loader.length != 4) loader = GpuDrivers.loaderArguments(this);
@@ -304,6 +319,7 @@ public final class GameActivity extends NativeActivity {
         }
     }
     @Override protected void onPause() {
+        new java.io.File(getFilesDir(),"velocity-v4-running").delete();
         foreground=false;
         if(displays!=null)displays.unregisterDisplayListener(displayListener);
         updateTiltSensor();
@@ -317,6 +333,7 @@ public final class GameActivity extends NativeActivity {
     }
     @Override protected void onResume() {
         super.onResume();
+        try{new java.io.File(getFilesDir(),"velocity-v4-running").createNewFile();}catch(java.io.IOException ignored){}
         foreground=true;
         if(displays==null)displays=(android.hardware.display.DisplayManager)getSystemService(DISPLAY_SERVICE);
         if(displays!=null)displays.registerDisplayListener(displayListener,new android.os.Handler(android.os.Looper.getMainLooper()));
