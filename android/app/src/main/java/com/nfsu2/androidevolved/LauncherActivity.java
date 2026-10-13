@@ -188,13 +188,13 @@ public final class LauncherActivity extends Activity {
     private void refreshOptions() {
         optionsList.removeAllViews();
         optionsList.addView(optionRow(getString(R.string.ui_language), launcherLocaleLabel(), this::chooseLauncherLocale));
-        optionsList.addView(optionRow("Graphics · DXVK Manager", "Verified matched runtime packages", () -> new DxvkManager(this,this::refreshOptions).show()));
-        optionsList.addView(optionRow("Pipeline cache", "Clear on next game launch", () -> {
+        optionsList.addView(optionRow(getString(R.string.v5_graphics_dxvk_manager), getString(R.string.v5_verified_matched_runtime_packages), () -> new DxvkManager(this,this::refreshOptions).show()));
+        optionsList.addView(optionRow(getString(R.string.v5_pipeline_cache), getString(R.string.v5_clear_on_next_game_launch), () -> {
             new AlertDialog.Builder(this).setTitle(getString(R.string.velocity4_clear_shader_cache_title)).setMessage(getString(R.string.velocity4_clear_shader_cache_body))
-                .setPositiveButton("Clear",(dialog,which)->{try{new File(getFilesDir(),"velocity-clear-cache").createNewFile();}catch(Exception error){message("Cache",error.getMessage());}})
+                .setPositiveButton(getString(R.string.v5_clear),(dialog,which)->{try{new File(getFilesDir(),"velocity-clear-cache").createNewFile();}catch(Exception error){message(getString(R.string.v5_cache),error.getMessage());}})
                 .setNegativeButton(android.R.string.cancel,null).show();
         }));
-        optionsList.addView(optionRow("Shader compilation statistics", "Export CSV · compile rate / waits / cache lookups", this::exportVelocity));
+        optionsList.addView(optionRow(getString(R.string.v5_shader_compilation_statistics), getString(R.string.v5_export_csv_compile_rate_waits_cache_lookups), this::exportVelocity));
         GpuDrivers.Driver driver = GpuDrivers.selected(this);
         // Custom drivers (libadrenotools) exist only in the 64-bit build.
         if (android.os.Process.is64Bit())
@@ -203,7 +203,7 @@ public final class LauncherActivity extends Activity {
         optionsList.addView(optionRow(UiText.t(LauncherActivity.this, R.string.game_language), languageLabel(), this::chooseLanguage));
         for (GameOptions.Option option : GameOptions.ALL)
             optionsList.addView(optionRow(option.title(this), option.label(this, GameOptions.get(this, option.key)), () -> chooseOption(option)));
-        optionsList.addView(optionRow(UiText.t(LauncherActivity.this, R.string.velocity_section), "Experimental " + BuildConfig.VERSION_NAME, () ->
+        optionsList.addView(optionRow(UiText.t(LauncherActivity.this, R.string.velocity_section), getString(R.string.v5_experimental_version,BuildConfig.VERSION_NAME), () ->
                 message(UiText.t(LauncherActivity.this, R.string.velocity_section), UiText.t(LauncherActivity.this, R.string.velocity_help))));
         for (GameOptions.Option option : GameOptions.VELOCITY) {
             if (option.key.equals(GameOptions.PROFILING) && !BuildConfig.VELOCITY_PROFILING) continue;

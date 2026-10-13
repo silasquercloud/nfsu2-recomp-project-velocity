@@ -13,24 +13,17 @@ final class GameOptions {
         final int title;
         final String[] values;
         final int[] labelIds;
-        final String literalTitle;
-        final String[] literalLabels;
         Option(String key, int title, String defaultValue, String[] values, int[] labels) {
-            this.key = key; this.title = title; this.defaultValue = defaultValue; this.values = values; this.labelIds = labels;this.literalTitle=null;this.literalLabels=null;
+            this.key = key; this.title = title; this.defaultValue = defaultValue; this.values = values; this.labelIds = labels;
         }
-        Option(String key,String title,String defaultValue,String[] values,String[] labels){
-            this.key=key;this.title=0;this.defaultValue=defaultValue;this.values=values;
-            this.labelIds=null;this.literalTitle=title;this.literalLabels=labels;
-        }
-        String title(Context context){return literalTitle!=null?literalTitle:context.getString(title);}
+        String title(Context context){return context.getString(title);}
         String[] labels(Context context) {
-            if(literalLabels!=null)return literalLabels;
             String[] result=new String[labelIds.length];
             for(int i=0;i<result.length;i++)result[i]=context.getString(labelIds[i]);
             return result;
         }
         String label(Context context, String value) {
-            for (int i = 0; i < values.length; i++) if (values[i].equals(value)) return literalLabels!=null?literalLabels[i]:context.getString(labelIds[i]);
+            for (int i = 0; i < values.length; i++) if (values[i].equals(value)) return context.getString(labelIds[i]);
             return value;
         }
     }
@@ -64,12 +57,12 @@ final class GameOptions {
     static final String HUD="velocity_hud", ORIENTATION="screen_orientation";
     static final String ASYNC="shader_async", WORKERS="shader_workers", PREWARM="shader_prewarm", PROFILE="graphics_profile";
     static final Option[] VELOCITY = {
-        new Option(PROFILE,"Graphics profile","balanced",new String[]{"compatibility","balanced","performance","experimental"},new String[]{"Universal compatibility · one auto worker","Balanced · conservative auto workers","Performance · parallel presentation","Experimental · up to four auto workers"}),
-        new Option(ASYNC,"Async shader compilation","auto",new String[]{"auto","on","off"},new String[]{"Auto · conservative worker budget","On · required pipelines prioritized","Off · synchronous fallback"}),
-        new Option(WORKERS,"Shader workers","0",new String[]{"0","1","2","3","4"},new String[]{"Auto","1","2","3","4"}),
-        new Option(PREWARM,"Pipeline prewarming","on",new String[]{"on","off"},new String[]{"On · known states as shaders load","Off"}),
-        new Option(HUD,"Performance HUD","compact",new String[]{"off","compact","detailed"},new String[]{"Off","Compact · FPS / GPU / Vulkan","Detailed · timings / pipelines / memory"}),
-        new Option(ORIENTATION,"Screen orientation","auto",new String[]{"auto","normal","reverse"},new String[]{"Automatic · both landscape directions","Landscape","Reverse landscape"}),
+        new Option(PROFILE,R.string.v5_graphics_profile,"balanced",new String[]{"compatibility","balanced","performance","experimental"},new int[]{R.string.v5_universal_compatibility_one_auto_worker,R.string.v5_balanced_conservative_auto_workers,R.string.v5_performance_parallel_presentation,R.string.v5_experimental_up_to_four_auto_workers}),
+        new Option(ASYNC,R.string.v5_async_shader_compilation,"auto",new String[]{"auto","on","off"},new int[]{R.string.v5_auto_conservative_worker_budget,R.string.v5_on_required_pipelines_prioritized,R.string.v5_off_synchronous_fallback}),
+        new Option(WORKERS,R.string.v5_shader_workers,"0",new String[]{"0","1","2","3","4"},new int[]{R.string.v5_auto,R.string.v5_1,R.string.v5_2,R.string.v5_3,R.string.v5_4}),
+        new Option(PREWARM,R.string.v5_pipeline_prewarming,"on",new String[]{"on","off"},new int[]{R.string.v5_on_known_states_as_shaders_load,R.string.v5_off}),
+        new Option(HUD,R.string.v5_performance_hud,"compact",new String[]{"off","compact","detailed"},new int[]{R.string.v5_off_19,R.string.v5_compact_fps_gpu_vulkan,R.string.v5_detailed_timings_pipelines_memory}),
+        new Option(ORIENTATION,R.string.v5_screen_orientation,"auto",new String[]{"auto","normal","reverse"},new int[]{R.string.v5_automatic_both_landscape_directions,R.string.v5_landscape,R.string.v5_reverse_landscape}),
         new Option(FRAME_PACING,R.string.frame_pacing,"default",new String[]{"default","experimental"},new int[]{R.string.pacing_default,R.string.pacing_experimental}),
         new Option(PROFILING,R.string.profiling,"off",new String[]{"off","on"},new int[]{R.string.profiling_off,R.string.profiling_on}),
         new Option(SHADER_CACHE,R.string.shader_cache,"on",new String[]{"off","on"},new int[]{R.string.cache_off,R.string.cache_on}),

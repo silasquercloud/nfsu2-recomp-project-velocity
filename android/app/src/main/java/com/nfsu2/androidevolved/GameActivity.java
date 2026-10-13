@@ -207,11 +207,11 @@ public final class GameActivity extends NativeActivity {
         if(clearRequest.isFile()){
             boolean cleared=true;java.io.File[] files=cache.listFiles();
             if(files!=null)for(java.io.File file:files)if(file.isFile()&&!file.delete())cleared=false;
-            if(cleared)clearRequest.delete();else Toast.makeText(this,"Some pipeline caches could not be removed",Toast.LENGTH_LONG).show();
+            if(cleared)clearRequest.delete();else Toast.makeText(this,getString(R.string.v5_some_pipeline_caches_could_not_be_removed),Toast.LENGTH_LONG).show();
         }
         java.io.File health=new java.io.File(getFilesDir(),"velocity-v4-running");
         boolean recover=health.isFile();
-        if(recover)Toast.makeText(this,"Previous game session ended unexpectedly: using synchronous shader recovery for this launch",Toast.LENGTH_LONG).show();
+        if(recover)Toast.makeText(this,getString(R.string.v5_previous_game_session_ended_unexpectedly_using_synchronous_shader_recovery_),Toast.LENGTH_LONG).show();
         try{health.createNewFile();}catch(java.io.IOException ignored){}
         boolean cacheEnabled = GameOptions.get(this, GameOptions.SHADER_CACHE).equals("on");
         boolean writableCache = cacheEnabled && (cache.isDirectory() || cache.mkdirs());

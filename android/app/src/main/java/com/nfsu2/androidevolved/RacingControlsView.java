@@ -318,7 +318,7 @@ final class RacingControlsView extends View {
                 .setItems(new String[]{UiText.t(getContext(), R.string.controls_style_hint),UiText.t(getContext(), R.string.tilt_title),UiText.t(getContext(), R.string.fps_limit),UiText.t(getContext(), R.string.layout_save),UiText.t(getContext(), R.string.layout_load_custom)},(dialog,which)->{
                     if(which==0)chooseStyle();else if(which==1)configureTilt.run();
                     else if(which==2)configureFrameLimit.run();else if(which==3)saveNamedLayout();else loadNamedLayout();
-                }).setNegativeButton("Cerrar",null).show();
+                }).setNegativeButton(android.R.string.cancel,null).show();
     }
     private void chooseStyle() {
         String[] ids={"classic","xbox","playstation"};

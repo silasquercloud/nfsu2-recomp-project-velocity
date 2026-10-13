@@ -164,7 +164,7 @@
     <string name="unexpected_exit" formatted="false">"fechamento inesperado"</string>
     <string name="trace_unavailable" formatted="false">"Rastreamento indisponível: "</string>
     <string name="ui_language" formatted="false">"Idioma do launcher"</string>
-    <string name="locale_system" formatted="false">"Idioma do Android"</string>
+    <string name="locale_system" formatted="false">Automático</string>
     <string name="locale_portuguese" formatted="false">"Português (Brasil)"</string>
     <string name="locale_english" formatted="false">"English"</string>
     <string name="locale_help" formatted="false">"Altera apenas o launcher. Os arquivos de idioma do jogo permanecem intactos."</string>
@@ -214,4 +214,106 @@
     <string name="velocity4_dxvk_download_title">Baixar e verificar pacote</string>
     <string name="velocity4_dxvk_verified_title">Pacote verificado</string>
     <string name="velocity4_dxvk_verified_body">O SHA-256, as bibliotecas ARM64 e a assinatura conferem. O Android confirmará a instalação.</string>
+    <string name="v5_universal_compatibility_one_auto_worker">Compatibilidade universal · um worker automático</string>
+    <string name="v5_balanced_conservative_auto_workers">Equilibrado · workers automáticos conservadores</string>
+    <string name="v5_performance_parallel_presentation">Desempenho · apresentação paralela</string>
+    <string name="v5_experimental_up_to_four_auto_workers">Experimental · até quatro workers automáticos</string>
+    <string name="v5_graphics_profile">Perfil gráfico</string>
+    <string name="v5_auto_conservative_worker_budget">Automático · limite conservador de workers</string>
+    <string name="v5_on_required_pipelines_prioritized">Ativada · prioridade para pipelines necessários</string>
+    <string name="v5_off_synchronous_fallback">Desativada · compilação síncrona</string>
+    <string name="v5_async_shader_compilation">Compilação assíncrona de shaders</string>
+    <string name="v5_auto">Automático</string>
+    <string name="v5_1">1</string>
+    <string name="v5_2">2</string>
+    <string name="v5_3">3</string>
+    <string name="v5_4">4</string>
+    <string name="v5_shader_workers">Workers de shaders</string>
+    <string name="v5_on_known_states_as_shaders_load">Ativado · estados conhecidos ao carregar shaders</string>
+    <string name="v5_off">Desativado</string>
+    <string name="v5_pipeline_prewarming">Pré-aquecimento de pipelines</string>
+    <string name="v5_off_19">Desativado</string>
+    <string name="v5_compact_fps_gpu_vulkan">Compacto · FPS / GPU / Vulkan</string>
+    <string name="v5_detailed_timings_pipelines_memory">Detalhado · tempos / pipelines / memória</string>
+    <string name="v5_performance_hud">Indicadores de desempenho (HUD)</string>
+    <string name="v5_automatic_both_landscape_directions">Automática · os dois sentidos horizontais</string>
+    <string name="v5_landscape">Horizontal normal</string>
+    <string name="v5_reverse_landscape">Horizontal invertida</string>
+    <string name="v5_screen_orientation">Orientação da tela</string>
+    <string name="v5_published_packages">Pacotes publicados</string>
+    <string name="v5_delete_downloads">Excluir downloads</string>
+    <string name="v5_recovery">Recuperação</string>
+    <string name="v5_recovery_selected">Recuperação selecionada</string>
+    <string name="v5_the_next_game_launch_uses_the_bundled_dxvk_with_synchronous_compilation_and">A próxima execução usará o DXVK incluído, compilação síncrona e configurações conservadoras. O Android não permite voltar silenciosamente a uma versão anterior; instalações canceladas ou malsucedidas preservam o aplicativo anterior.</string>
+    <string name="v5_download_running">Download em andamento</string>
+    <string name="v5_cancel_or_finish_the_download_first">Cancele ou conclua o download primeiro.</string>
+    <string name="v5_downloads_deleted">Downloads excluídos</string>
+    <string name="v5_loading_verified_package_catalog">Carregando catálogo de pacotes verificados…</string>
+    <string name="v5_catalog_unavailable">Catálogo indisponível</string>
+    <string name="v5_older_version_download_only_android_does_not_permit_normal_downgrade_instal">Versão anterior: apenas download. O Android não permite instalar normalmente uma versão anterior.</string>
+    <string name="v5_installation_takes_effect_after_android_restarts_the_application_save_and_e">A instalação terá efeito após o Android reiniciar o aplicativo. Salve e feche o jogo antes de instalar.</string>
+    <string name="v5_download">Baixar</string>
+    <string name="v5_one_package_at_a_time">Baixe um pacote por vez.</string>
+    <string name="v5_cancel">Cancelar</string>
+    <string name="v5_verified_legacy_download">Download da versão anterior verificado</string>
+    <string name="v5_stored_in_private_package_cache_normal_android_installation_cannot_downgrad">Salvo no cache privado de pacotes. A instalação normal do Android não permite voltar a esta versão.</string>
+    <string name="v5_install">Instalar</string>
+    <string name="v5_package_not_installed">Pacote não instalado</string>
+    <string name="v5_allow_installation">Permitir instalação</string>
+    <string name="v5_enable_installation_for_project_velocity_in_the_next_android_screen_then_se">Permita a instalação pelo Project Velocity na próxima tela do Android e selecione novamente o pacote baixado.</string>
+    <string name="v5_installer_unavailable">Instalador indisponível</string>
+    <string name="v5_graphics_dxvk_manager">Gráficos · Gerenciador DXVK</string>
+    <string name="v5_verified_matched_runtime_packages">Pacotes completos compatíveis e verificados</string>
+    <string name="v5_pipeline_cache">Cache de pipelines</string>
+    <string name="v5_clear_on_next_game_launch">Limpar na próxima execução do jogo</string>
+    <string name="v5_clear">Limpar</string>
+    <string name="v5_cache">Cache</string>
+    <string name="v5_shader_compilation_statistics">Estatísticas de compilação de shaders</string>
+    <string name="v5_export_csv_compile_rate_waits_cache_lookups">Exportar CSV · compilações / esperas / consultas ao cache</string>
+    <string name="v5_some_pipeline_caches_could_not_be_removed">Não foi possível remover alguns caches de pipelines</string>
+    <string name="v5_previous_game_session_ended_unexpectedly_using_synchronous_shader_recovery_">A sessão anterior terminou inesperadamente: esta execução usará a recuperação com shaders síncronos</string>
+    <string name="v5_experimental_version">Experimental %1$s</string>
+    <string name="v5_unexpected_catalog_origin">Origem inesperada do catálogo</string>
+    <string name="v5_untrusted_download_redirect">Redirecionamento de download não confiável</string>
+    <string name="v5_missing_redirect">Redirecionamento ausente</string>
+    <string name="v5_too_many_redirects">Redirecionamentos em excesso</string>
+    <string name="v5_catalog_too_large">Catálogo muito grande</string>
+    <string name="v5_unsupported_catalog">Catálogo não suportado</string>
+    <string name="v5_incompatible_package_identity">Identidade do pacote incompatível</string>
+    <string name="v5_unknown_package_source">Origem do pacote desconhecida</string>
+    <string name="v5_invalid_package_size_hash">Tamanho ou hash do pacote inválido</string>
+    <string name="v5_unknown_category">Categoria desconhecida</string>
+    <string name="v5_package_hash_size_mismatch">O hash ou tamanho do pacote não corresponde ao catálogo</string>
+    <string name="v5_package_manifest_mismatch">O manifesto do pacote não corresponde ao catálogo</string>
+    <string name="v5_signing_certificate_unavailable">Certificado de assinatura indisponível</string>
+    <string name="v5_signing_certificate_does_not_match_installed_velocity">O certificado não corresponde ao Velocity instalado</string>
+    <string name="v5_cancelled">Cancelado</string>
+    <string name="v5_download_timed_out">Tempo limite do download excedido</string>
+    <string name="v5_package_exceeds_declared_size">O pacote excede o tamanho declarado</string>
+    <string name="v5_cannot_atomically_install_download">Não foi possível concluir a gravação do download</string>
+    <string name="v5_backend_status">Incluído: DXVK Native 1.9.2b + Velocity.5.\nÚltima inicialização confirmada: %1$s\n\nDXVK 1.10.3: indisponível. Suas APIs Windows de apresentação e monitores ainda não foram adaptadas e validadas no Android. Não há troca isolada de backend.</string>
+    <string name="v5_backend_not_started">Não registrada para esta compilação</string>
+    <string name="v5_category_current">Atual</string>
+    <string name="v5_category_stable">Estável</string>
+    <string name="v5_category_legacy">Legado</string>
+    <string name="v5_category_experimental">Experimental</string>
+    <string name="v5_validation_automated">Verificações automatizadas; validação em aparelho pendente</string>
+    <string name="v5_generic_failure">A operação falhou. Detalhes técnicos: %1$s</string>
+    <string name="v5_pipeline_failure">A compilação de pipeline falhou após nova tentativa. Reinicie com shaders síncronos ou um driver compatível.</string>
+    <string name="v5_missing_dependency">Dependência nativa indisponível: %1$s</string>
+    <string name="v5_auto_locale">Automático</string>
+    <string name="v5_elf_error_0">Intervalo ELF fora da biblioteca</string>
+    <string name="v5_elf_error_1">ELF truncado</string>
+    <string name="v5_elf_error_2">A biblioteca não é ELF64 ARM64</string>
+    <string name="v5_elf_error_3">Tabela de programa ELF não suportada</string>
+    <string name="v5_elf_error_4">Segmento ELF inválido</string>
+    <string name="v5_elf_error_5">Tabela dinâmica ELF ausente</string>
+    <string name="v5_elf_error_6">Tabela de textos ELF inválida</string>
+    <string name="v5_elf_error_7">Textos ELF sem mapeamento</string>
+    <string name="v5_elf_error_8">Dependência ELF inválida</string>
+    <string name="v5_elf_error_9">Nome de dependência ELF inválido</string>
+    <string name="v5_elf_error_10">Entrada duplicada no APK</string>
+    <string name="v5_elf_error_11">Entrada inválida no APK</string>
+    <string name="v5_elf_error_12">ABI ou caminho inesperado</string>
+    <string name="v5_elf_error_13">Pacote do port incompleto</string>
 </resources>

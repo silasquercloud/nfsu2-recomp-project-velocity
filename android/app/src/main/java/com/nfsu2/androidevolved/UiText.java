@@ -17,7 +17,43 @@ final class UiText {
     static String t(Context context,int id) { return context.getString(id); }
     static String error(Context context,Throwable error) {
         if (error instanceof DriverArchive.Failure) return code(context,((DriverArchive.Failure)error).code);
-        return error.getLocalizedMessage()==null?error.getClass().getSimpleName():error.getLocalizedMessage();
+        String message=error.getMessage();
+        if(message!=null&&message.startsWith("Unavailable native dependency: "))return context.getString(R.string.v5_missing_dependency,message.substring(31));
+        if(message!=null)switch(message){
+            case "ELF range outside library": return t(context,R.string.v5_elf_error_0);
+            case "Truncated ELF": return t(context,R.string.v5_elf_error_1);
+            case "Library is not ELF64 ARM64": return t(context,R.string.v5_elf_error_2);
+            case "Unsupported ELF program table": return t(context,R.string.v5_elf_error_3);
+            case "Invalid ELF segment": return t(context,R.string.v5_elf_error_4);
+            case "Missing ELF dynamic table": return t(context,R.string.v5_elf_error_5);
+            case "Invalid ELF string table": return t(context,R.string.v5_elf_error_6);
+            case "Unmapped ELF strings": return t(context,R.string.v5_elf_error_7);
+            case "Invalid ELF dependency": return t(context,R.string.v5_elf_error_8);
+            case "Invalid ELF dependency name": return t(context,R.string.v5_elf_error_9);
+            case "Duplicate APK entry": return t(context,R.string.v5_elf_error_10);
+            case "Invalid APK entry": return t(context,R.string.v5_elf_error_11);
+            case "Unexpected ABI/path": return t(context,R.string.v5_elf_error_12);
+            case "Incomplete port package": return t(context,R.string.v5_elf_error_13);
+            case "Unexpected catalog origin": return t(context,R.string.v5_unexpected_catalog_origin);
+            case "Untrusted download redirect": return t(context,R.string.v5_untrusted_download_redirect);
+            case "Missing redirect": return t(context,R.string.v5_missing_redirect);
+            case "Too many redirects": return t(context,R.string.v5_too_many_redirects);
+            case "Catalog too large": return t(context,R.string.v5_catalog_too_large);
+            case "Unsupported catalog": return t(context,R.string.v5_unsupported_catalog);
+            case "Incompatible package identity": return t(context,R.string.v5_incompatible_package_identity);
+            case "Unknown package source": return t(context,R.string.v5_unknown_package_source);
+            case "Invalid package size/hash": return t(context,R.string.v5_invalid_package_size_hash);
+            case "Unknown category": return t(context,R.string.v5_unknown_category);
+            case "Package hash/size mismatch": return t(context,R.string.v5_package_hash_size_mismatch);
+            case "Package manifest mismatch": return t(context,R.string.v5_package_manifest_mismatch);
+            case "Signing certificate unavailable": return t(context,R.string.v5_signing_certificate_unavailable);
+            case "Signing certificate does not match installed Velocity": return t(context,R.string.v5_signing_certificate_does_not_match_installed_velocity);
+            case "Cancelled": return t(context,R.string.v5_cancelled);
+            case "Download timed out": return t(context,R.string.v5_download_timed_out);
+            case "Package exceeds declared size": return t(context,R.string.v5_package_exceeds_declared_size);
+            case "Cannot atomically install download": return t(context,R.string.v5_cannot_atomically_install_download);
+        }
+        return context.getString(R.string.v5_generic_failure,error.getLocalizedMessage()==null?error.getClass().getSimpleName():error.getLocalizedMessage());
     }
     static String code(Context context,String code) {
         switch(code) {
@@ -60,6 +96,7 @@ final class UiText {
     private static String runtimeDetail(Context context,String detail) {
         if(detail.startsWith("hle_missing:"))return t(context,R.string.runtime_call_missing)+detail.substring("hle_missing:".length());
         if(detail.startsWith("network_unimplemented:"))return t(context,R.string.network_unimplemented)+detail.substring("network_unimplemented:".length());
+        if(detail.contains("DXVK pipeline compilation failed after retry"))return t(context,R.string.v5_pipeline_failure);
         return detail;
     }
     static String status(Context context,String value) {

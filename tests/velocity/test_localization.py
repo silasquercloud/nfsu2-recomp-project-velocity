@@ -50,8 +50,10 @@ class Localization(unittest.TestCase):
     def test_translatable_widget_text_is_not_hardcoded(self):
         # Product name and diagnostic prefix are intentionally proper names.
         for source in JAVA.glob('*.java'):
-            for match in re.findall(r'\.set(?:Title|Hint|Message|Error|ContentDescription)\("([^"\n]+)"',source.read_text()):
+            for match in re.findall(r'\.set(?:Title|Hint|Message|Error|ContentDescription|PositiveButton|NegativeButton|NeutralButton)\("([^"\n]+)"',source.read_text()):
                 self.fail(f'Hardcoded widget text in {source.name}: {match}')
+        self.assertNotIn('literalLabels',(JAVA/'GameOptions.java').read_text())
+        self.assertNotRegex((JAVA/'GameOptions.java').read_text(),r'new Option\(\w+,\s*"')
         self.assertNotIn('option.labels,',(JAVA/'GameActivity.java').read_text())
         self.assertNotIn('option.labels,',(JAVA/'LauncherActivity.java').read_text())
 

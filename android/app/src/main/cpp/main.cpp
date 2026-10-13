@@ -387,6 +387,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nat
     JNIEnv* env,jclass,jboolean profiling,jstring report,jstring metadata,jstring cache){
     const char* reportPath=env->GetStringUTFChars(report,nullptr);
     if(!reportPath)return;
+    const std::string backendPath=std::string(reportPath)+".backend";
+    setenv("NFS_VELOCITY_BACKEND_REPORT",backendPath.c_str(),1);
+    std::remove(backendPath.c_str());
     const char* cachePath=env->GetStringUTFChars(cache,nullptr);
     if(cachePath){
         velocity::configure(profiling==JNI_TRUE,reportPath);
