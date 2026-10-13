@@ -20,6 +20,9 @@
 extern "C" IDirect3D9* Direct3DCreate9(UINT sdk);
 extern "C" void dxvkAndroidSetWindow(ANativeWindow* window);
 extern "C" HWND dxvkAndroidGetWindowHandle();
+#ifdef __ANDROID__
+extern "C" bool dxvkAndroidHasPipelineFailure();
+#endif
 extern "C" void dxvkAndroidSetRenderSize(uint32_t width,uint32_t height);
 void setD3D9RenderSize(unsigned width,unsigned height){dxvkAndroidSetRenderSize(width,height);}
 #ifndef __ANDROID__
@@ -192,8 +195,12 @@ uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumen
         if(!window)return D3DERR_DEVICELOST;
         auto source=static_cast<const RECT*>(pointer(args[1])),destination=static_cast<const RECT*>(pointer(args[2]));
         auto dirty=static_cast<const RGNDATA*>(pointer(args[4]));
-        return kind==2?static_cast<IDirect3DDevice9*>(object)->Present(source,destination,window,dirty):
+        HRESULT result=kind==2?static_cast<IDirect3DDevice9*>(object)->Present(source,destination,window,dirty):
             static_cast<IDirect3DSwapChain9*>(object)->Present(source,destination,window,dirty,args[5]);
+#ifdef __ANDROID__
+        if(dxvkAndroidHasPipelineFailure())throw std::runtime_error("DXVK pipeline compilation failed after retry; restart with synchronous shaders or a compatible driver");
+#endif
+        return result;
     }
     // Log the first calls of each method; tokens span 0x7e000000..0x7e00ffff.
     static uint8_t methodCalls[4096];auto& calls=methodCalls[((token-methodBase)/16)&4095];

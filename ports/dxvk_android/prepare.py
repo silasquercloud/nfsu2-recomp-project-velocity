@@ -128,6 +128,8 @@ replace("src/dxvk/hud/dxvk_hud_item.cpp", '#include "dxvk_hud_item.h"', '#includ
 replace("src/dxvk/hud/dxvk_hud_item.cpp", '    HudPos position = { 8.0f, 8.0f };', '    HudPos position = { 8.0f, 8.0f };\n    const auto size = renderer.surfaceSize();\n    float left = 0, top = 0;\n    dxvkAndroidHudOffset(size.width, size.height, &left, &top);\n    position.x += left; position.y += top;')
 replace("src/vulkan/vulkan_presenter.cpp", '#include "vulkan_presenter.h"', '#include "vulkan_presenter.h"\n#include "velocity_surface.h"')
 replace("src/vulkan/vulkan_presenter.cpp", '    swapInfo.preTransform           = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;', '    swapInfo.preTransform = velocity::compositorTransform(caps.supportedTransforms);\n    if (!swapInfo.preTransform) {\n      Logger::err("Velocity: surface requires application prerotation; identity/inherit compositor path unavailable");\n      return VK_ERROR_FEATURE_NOT_PRESENT;\n    }\n    velocity::metadata(str::format("present_mode=", m_info.presentMode, " image_count=", m_info.imageCount, " extent=", m_info.imageExtent.width, "x", m_info.imageExtent.height, " current_transform=", caps.currentTransform, " selected_transform=", swapInfo.preTransform));')
+from prepare_velocity4 import apply
+apply(args.output)
 (args.output / "version.h").write_text('#define DXVK_VERSION "native-1.9.2b-android-arm64"\n')
 (args.output / "PINNED_REVISION").write_text(PIN + "\n")
 print("Prepared DXVK " + PIN)

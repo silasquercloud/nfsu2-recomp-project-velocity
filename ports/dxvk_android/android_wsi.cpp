@@ -1,4 +1,5 @@
 #include <cstdint>
+#include "../../android/app/src/main/cpp/velocity_async.h"
 #include "../../android/app/src/main/cpp/android_resolution.h"
 #ifdef __ANDROID__
 #include <android/native_window.h>
@@ -150,3 +151,5 @@ bool enterFullscreenMode(HMONITOR handle,HWND window,DxvkWindowState*,bool){retu
 bool leaveFullscreenMode(HWND window,DxvkWindowState*){return isWindow(window);}
 bool restoreDisplayMode(HMONITOR handle){return handle==monitor();}
 }
+
+extern "C" bool dxvkAndroidHasPipelineFailure(){return velocity::renderingFailure.load();}
