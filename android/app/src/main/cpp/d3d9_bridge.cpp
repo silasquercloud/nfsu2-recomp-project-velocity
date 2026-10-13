@@ -16,6 +16,7 @@
 #include <chrono>
 #include <thread>
 #include <cstdlib>
+#include <cstdio>
 
 extern "C" IDirect3D9* Direct3DCreate9(UINT sdk);
 extern "C" void dxvkAndroidSetWindow(ANativeWindow* window);
@@ -151,7 +152,7 @@ void configureD3D9Bridge(void* base,uint32_t (*allocator)(uint32_t),void (*deall
 #endif
 }
 void shutdownD3D9Bridge(){
-    for(auto& lock:resourceLocks)freeGuest(lock.second.guest);resourceLocks.clear();
+    for(auto& lock:resourceLocks)freeGuest(lock.second.guest);resourceLocks.clear();clearLockScratch();
     for(uint32_t kind=15;kind;--kind)for(auto it=objects.begin();it!=objects.end();){
         if(static_cast<uint32_t>(it->second.kind)!=kind){++it;continue;}
         auto object=it->second;for(uint32_t n=0;n<object.references;++n)object.native->Release();
@@ -167,11 +168,16 @@ bool d3d9RequestsSurface(){return surfaceRequested;}
 void acknowledgeD3D9Surface(bool available){surfaceAvailable=available;}
 uint32_t createGuestD3D9(uint32_t sdk){
     auto native=Direct3DCreate9(sdk);
+    velocity::metadata("backend=DXVK Native 1.9.2b; revision=c8dc91fabd00cac11d697ccf07426e798393cd40; velocity=5");
+    if(native)if(const char* path=std::getenv("NFS_VELOCITY_BACKEND_REPORT")){
+        if(FILE* report=std::fopen(path,"w")){std::fputs("Velocity.5 / DXVK Native 1.9.2b / c8dc91fabd00cac11d697ccf07426e798393cd40\n",report);std::fclose(report);}
+    }
     NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","DXVK native Direct3DCreate9 sdk=%u",sdk);
     return wrap(native,Kind::D3D9);
 }
 uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumentCount){
     uint32_t kind=(token-methodBase)/4096,method=((token-methodBase)%4096)/16;
+    velocity::D3D9Call operation(kind,method);
     const bool isPresent=(kind==2&&method==17)||(kind==13&&method==3);
 #if NFS_VELOCITY_PROFILING
     static uint64_t sampleSequence=0; // Calls are serialized by the guest machine.

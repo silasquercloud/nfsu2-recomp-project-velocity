@@ -1,4 +1,20 @@
 #include "velocity_profile.h"
+// Guest calls are serialized. Retain at most 8 MiB / 32 exact-size blocks;
+// active locks own distinct allocations, and no native GPU pointers are retained.
+struct LockScratch { uint32_t address=0,size=0; };
+LockScratch lockScratch[32];
+uint64_t lockScratchBytes=0,lockScratchHits=0,lockScratchMisses=0;
+void clearLockScratch(){for(auto& b:lockScratch){if(b.address)freeGuest(b.address);b={};}lockScratchBytes=0;}
+uint32_t acquireLockScratch(uint32_t size){
+    for(auto& b:lockScratch)if(b.address&&b.size==size){auto address=b.address;lockScratchBytes-=b.size;b={};++lockScratchHits;velocity::count(velocity::Counter::ScratchReuse);return address;}
+    ++lockScratchMisses;velocity::count(velocity::Counter::ScratchAlloc);
+    try{return allocateGuest(size);}catch(...){clearLockScratch();return allocateGuest(size);}
+}
+void recycleLockScratch(uint32_t address,uint32_t size){
+    if(size&&size<=8*1024*1024&&lockScratchBytes+size<=8*1024*1024)
+        for(auto& b:lockScratch)if(!b.address){b={address,size};lockScratchBytes+=size;return;}
+    freeGuest(address);
+}
 struct ResourceLock {void* native;uint32_t guest,size,pitch,rowBytes,rows,flags;CompressedView compressed{};RECT rectangle{};uint32_t nativePitch{};};
 std::map<uint64_t,ResourceLock> resourceLocks;
 uint64_t lockKey(uint32_t object,uint32_t subresource){return (uint64_t(object)<<32)|subresource;}
@@ -33,7 +49,8 @@ HRESULT lockPixels(uint32_t address,uint32_t subresource,const D3DSURFACE_DESC& 
             throw std::runtime_error("Compressed lock rectangle must follow block boundaries");
         if(native.Pitch<=0||static_cast<uint32_t>(native.Pitch)<static_cast<uint32_t>(region.right-region.left)*4)throw std::runtime_error("Invalid decoded texture pitch");
         uint32_t pitch=texture.pitch(view.level),rows=(region.bottom-region.top+3)/4,bytes=((region.right-region.left+3)/4)*texture.blockBytes();
-        uint32_t temporary=allocateGuest(pitch*rows),offset=(region.top/4)*pitch+(region.left/4)*texture.blockBytes();auto& raw=texture.bytes(view.face,view.level);
+        uint32_t temporary=acquireLockScratch(pitch*rows),offset=(region.top/4)*pitch+(region.left/4)*texture.blockBytes();auto& raw=texture.bytes(view.face,view.level);
+        if(!(flags&D3DLOCK_DISCARD))velocity::count(velocity::Counter::LockReadBytes,uint64_t(bytes)*rows);
         if(!(flags&D3DLOCK_DISCARD))for(uint32_t row=0;row<rows;++row)std::memcpy(static_cast<uint8_t*>(pointer(temporary))+row*pitch,raw.data()+offset+row*pitch,bytes);
         resourceLocks.emplace(lockKey(address,subresource),ResourceLock{native.pBits,temporary,pitch*rows,pitch,bytes,rows,flags,view,region,static_cast<uint32_t>(native.Pitch)});
         write(output,pitch);write(output+4,temporary);return D3D_OK;
@@ -41,8 +58,9 @@ HRESULT lockPixels(uint32_t address,uint32_t subresource,const D3DSURFACE_DESC& 
     uint32_t rows=blockCompressed(desc.Format)?(height+3)/4:height,bytes=rowBytes(desc.Format,width);
     if(native.Pitch<=0||static_cast<uint32_t>(native.Pitch)<bytes||!rows)throw std::runtime_error("Invalid D3D9 lock pitch");
     uint64_t size=uint64_t(native.Pitch)*rows;if(size>0x7fffffff)throw std::runtime_error("D3D9 lock allocation too large");
-    uint32_t temporary=allocateGuest(size);
-    if(!(flags&D3DLOCK_DISCARD))for(uint32_t row=0;row<rows;++row)std::memcpy(static_cast<uint8_t*>(pointer(temporary))+row*native.Pitch,static_cast<const uint8_t*>(native.pBits)+row*native.Pitch,bytes);
+    uint32_t temporary=acquireLockScratch(size);
+    if(!(flags&D3DLOCK_DISCARD))velocity::count(velocity::Counter::LockReadBytes,uint64_t(bytes)*rows);
+        if(!(flags&D3DLOCK_DISCARD))for(uint32_t row=0;row<rows;++row)std::memcpy(static_cast<uint8_t*>(pointer(temporary))+row*native.Pitch,static_cast<const uint8_t*>(native.pBits)+row*native.Pitch,bytes);
     resourceLocks.emplace(lockKey(address,subresource),ResourceLock{native.pBits,temporary,static_cast<uint32_t>(size),static_cast<uint32_t>(native.Pitch),bytes,rows,flags});
     write(output,native.Pitch);write(output+4,temporary);return D3D_OK;
 }
@@ -66,7 +84,7 @@ void copyLockBack(uint32_t address,uint32_t subresource){
         velocity::count(velocity::Counter::DecodedPixels,uint64_t(regionWidth)*regionHeight);
     }
 }
-void releaseLock(uint32_t address,uint32_t subresource){auto lock=resourceLocks.find(lockKey(address,subresource));if(lock!=resourceLocks.end()){freeGuest(lock->second.guest);resourceLocks.erase(lock);}}
+void releaseLock(uint32_t address,uint32_t subresource){auto lock=resourceLocks.find(lockKey(address,subresource));if(lock!=resourceLocks.end()){recycleLockScratch(lock->second.guest,lock->second.size);resourceLocks.erase(lock);}}
 HRESULT lockTexture(uint32_t address,uint32_t level,uint32_t output,const RECT* rect,uint32_t flags){
     if(!output||resourceLocks.count(lockKey(address,level)))return D3DERR_INVALIDCALL;
     velocity::Scope timing(velocity::Metric::TextureLock);
@@ -91,8 +109,11 @@ template<class Buffer,class Desc>HRESULT lockBuffer(uint32_t address,uint32_t of
     if(!output||resourceLocks.count(lockKey(address,0)))return D3DERR_INVALIDCALL;
     velocity::Scope timing(velocity::Metric::BufferLock);
     auto buffer=nativeObject<Buffer>(address);Desc desc{};HRESULT status=buffer->GetDesc(&desc);if(FAILED(status))return status;
+    if(offset>desc.Size||(size&&size>desc.Size-offset))return D3DERR_INVALIDCALL;
     void* native=nullptr;status=buffer->Lock(offset,size,&native,flags);if(FAILED(status))return status;
-    if(!size)size=desc.Size-offset;uint32_t temporary=allocateGuest(size);
+    if(!size)size=desc.Size-offset;
+    uint32_t temporary=acquireLockScratch(size);
+    if(!(flags&D3DLOCK_DISCARD))velocity::count(velocity::Counter::LockReadBytes,size);
     if(!(flags&D3DLOCK_DISCARD))std::memcpy(pointer(temporary),native,size);
     resourceLocks.emplace(lockKey(address,0),ResourceLock{native,temporary,size,size,size,1,flags});write(output,temporary);return D3D_OK;
 }

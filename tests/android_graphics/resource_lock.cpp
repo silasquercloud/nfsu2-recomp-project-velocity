@@ -96,5 +96,14 @@ int main(){try{
     checkPixels(D3DFMT_DXT1,5,5,24,0);
     checkCompressedFallback();
     checkCompressedPartial();
+    clearLockScratch();auto misses=lockScratchMisses,hits=lockScratchHits;
+    for(unsigned i=0;i<1000;++i){auto a=acquireLockScratch(65536);recycleLockScratch(a,65536);}
+    require(lockScratchMisses-misses==1&&lockScratchHits-hits==999,"Repeated locks should allocate once");
+    auto a=acquireLockScratch(65536),b=acquireLockScratch(65536);
+    require(a!=b,"Concurrent locks alias scratch storage");recycleLockScratch(a,65536);recycleLockScratch(b,65536);
+    auto large=acquireLockScratch(9*1024*1024);recycleLockScratch(large,9*1024*1024);
+    require(lockScratchBytes<=8*1024*1024,"Scratch cache exceeds budget");
+    clearLockScratch();require(lockScratchBytes==0,"Scratch cache not released at shutdown");
+    std::puts("Scratch reuse: 1000 sequential locks, 1 allocation / 999 reuse; active locks isolated, 8 MiB cap, cleanup verified");
     std::puts("Graphics memory and DXT decoding passed: native/guest pointers, row pitch, read-only, guard bytes, edge blocks, transparency and alpha interpolation");return 0;
 }catch(const std::exception& error){std::fprintf(stderr,"%s\n",error.what());return 1;}}
