@@ -4,16 +4,35 @@
 #include <stdexcept>
 #include <cstring>
 
-// Decode DXT1, DXT3 or DXT5 into byte-ordered RGBA8, including partial edge blocks.
-inline std::vector<uint8_t> decodeDXT(unsigned mode,uint32_t width,uint32_t height,
-                                     const uint8_t* source,size_t sourceBytes){
+inline void validateDXTRegion(unsigned mode,uint32_t width,uint32_t height,
+        const uint8_t* source,size_t sourceBytes,uint32_t left,uint32_t top,
+        uint32_t regionWidth,uint32_t regionHeight){
     if(mode!=1&&mode!=3&&mode!=5)throw std::invalid_argument("Unsupported DXT mode");
     uint64_t blocksWide=(uint64_t(width)+3)/4,blocksHigh=(uint64_t(height)+3)/4;
     uint32_t blockBytes=mode==1?8:16;
     if(!width||!height||blocksWide*blocksHigh*blockBytes>sourceBytes||uint64_t(width)*height>0x1fffffff)
         throw std::invalid_argument("Invalid DXT dimensions or truncated blocks");
-    std::vector<uint8_t> rgba(size_t(width)*height*4);
-    for(uint32_t by=0;by<blocksHigh;++by)for(uint32_t bx=0;bx<blocksWide;++bx){
+    if(!source||!regionWidth||!regionHeight||left>=width||top>=height||
+       regionWidth>width-left||regionHeight>height-top||left%4||top%4||
+       ((left+regionWidth)%4&&left+regionWidth!=width)||
+       ((top+regionHeight)%4&&top+regionHeight!=height))
+        throw std::invalid_argument("Invalid DXT rectangle");
+}
+
+// Decode only a block-aligned rectangle into RGBA8, including partial mip edges.
+inline void decodeDXTRegionInto(unsigned mode,uint32_t width,uint32_t height,
+        const uint8_t* source,size_t sourceBytes,uint32_t left,uint32_t top,
+        uint32_t regionWidth,uint32_t regionHeight,uint8_t* destination,
+        size_t destinationBytes,size_t destinationPitch){
+    validateDXTRegion(mode,width,height,source,sourceBytes,left,top,regionWidth,regionHeight);
+    const uint64_t blocksWide=(uint64_t(width)+3)/4;
+    const uint32_t blockBytes=mode==1?8:16;
+    const uint64_t rowBytes=uint64_t(regionWidth)*4;
+    if(!destination||destinationPitch<rowBytes||rowBytes>destinationBytes||
+       (regionHeight>1&&destinationPitch>(destinationBytes-rowBytes)/(regionHeight-1)))
+        throw std::invalid_argument("Invalid DXT destination extent or pitch");
+    for(uint32_t by=top/4;by<(uint64_t(top)+regionHeight+3)/4;++by)
+    for(uint32_t bx=left/4;bx<(uint64_t(left)+regionWidth+3)/4;++bx){
         const uint8_t* block=source+(size_t(by)*blocksWide+bx)*blockBytes;
         const uint8_t* colors=block+(mode==1?0:8);
         uint16_t endpoints[2];std::memcpy(endpoints,colors,4);
@@ -29,11 +48,28 @@ inline std::vector<uint8_t> decodeDXT(unsigned mode,uint32_t width,uint32_t heig
             else {for(unsigned i=1;i<=4;++i)alpha[i+1]=((5-i)*alpha[0]+i*alpha[1])/5;alpha[6]=0;alpha[7]=255;}
             for(unsigned i=0;i<6;++i)alphaIndices|=uint64_t(block[2+i])<<(8*i);
         }
-        for(unsigned p=0;p<16;++p){uint32_t x=bx*4+(p&3),y=by*4+(p>>2);if(x>=width||y>=height)continue;
-            auto out=rgba.data()+(size_t(y)*width+x)*4;std::memcpy(out,palette[(indices>>(p*2))&3],4);
+        for(unsigned p=0;p<16;++p){uint32_t x=bx*4+(p&3),y=by*4+(p>>2);if(x>=left+regionWidth||y>=top+regionHeight)continue;
+            auto out=destination+size_t(y-top)*destinationPitch+size_t(x-left)*4;std::memcpy(out,palette[(indices>>(p*2))&3],4);
             if(mode==3)out[3]=((block[p/2]>>((p&1)*4))&15)*17;
             if(mode==5)out[3]=alpha[(alphaIndices>>(p*3))&7];
         }
     }
+}
+
+inline std::vector<uint8_t> decodeDXTRegion(unsigned mode,uint32_t width,uint32_t height,
+        const uint8_t* source,size_t sourceBytes,uint32_t left,uint32_t top,
+        uint32_t regionWidth,uint32_t regionHeight){
+    validateDXTRegion(mode,width,height,source,sourceBytes,left,top,regionWidth,regionHeight);
+    if(uint64_t(regionWidth)*regionHeight>0x1fffffff)
+        throw std::invalid_argument("Invalid DXT allocation extent");
+    std::vector<uint8_t> rgba(size_t(regionWidth)*regionHeight*4);
+    decodeDXTRegionInto(mode,width,height,source,sourceBytes,left,top,regionWidth,regionHeight,
+        rgba.data(),rgba.size(),size_t(regionWidth)*4);
     return rgba;
+}
+
+// Preserve the full-mip API used by existing callers and tests.
+inline std::vector<uint8_t> decodeDXT(unsigned mode,uint32_t width,uint32_t height,
+                                    const uint8_t* source,size_t sourceBytes){
+    return decodeDXTRegion(mode,width,height,source,sourceBytes,0,0,width,height);
 }

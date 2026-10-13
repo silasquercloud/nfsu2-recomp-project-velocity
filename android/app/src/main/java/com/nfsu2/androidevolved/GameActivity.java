@@ -69,24 +69,24 @@ public final class GameActivity extends NativeActivity {
         }
     }
     private void showTiltOptions() {
-        if(tiltSensor==null) {Toast.makeText(this,"Este dispositivo no dispone de acelerómetro",Toast.LENGTH_LONG).show();return;}
+        if(tiltSensor==null) {Toast.makeText(this,UiText.t(GameActivity.this, R.string.no_accelerometer),Toast.LENGTH_LONG).show();return;}
         android.content.SharedPreferences options=getSharedPreferences("touch_layouts_v1",MODE_PRIVATE);
         LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(24),dp(8),dp(24),dp(8));
-        CheckBox enabled=new CheckBox(this);enabled.setText("Girar inclinando el celular");enabled.setChecked(tiltEnabled);form.addView(enabled);
-        CheckBox invert=new CheckBox(this);invert.setText("Invertir dirección");invert.setChecked(tiltInvert);form.addView(invert);
-        TextView label=new TextView(this);label.setText("Sensibilidad: "+tiltSensitivity+"×");form.addView(label);
+        CheckBox enabled=new CheckBox(this);enabled.setText(UiText.t(GameActivity.this, R.string.tilt_enable));enabled.setChecked(tiltEnabled);form.addView(enabled);
+        CheckBox invert=new CheckBox(this);invert.setText(UiText.t(GameActivity.this, R.string.tilt_invert));invert.setChecked(tiltInvert);form.addView(invert);
+        TextView label=new TextView(this);label.setText(UiText.t(GameActivity.this, R.string.sensitivity_prefix)+tiltSensitivity+"×");form.addView(label);
         android.widget.SeekBar sensitivity=new android.widget.SeekBar(this);sensitivity.setMax(30);sensitivity.setProgress(Math.round(tiltSensitivity*10)-10);form.addView(sensitivity);
         sensitivity.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
             public void onStartTrackingTouch(android.widget.SeekBar bar) {}public void onStopTrackingTouch(android.widget.SeekBar bar) {}
-            public void onProgressChanged(android.widget.SeekBar bar,int progress,boolean user) {label.setText("Sensibilidad: "+((progress+10)/10f)+"×");}
+            public void onProgressChanged(android.widget.SeekBar bar,int progress,boolean user) {label.setText(UiText.t(GameActivity.this, R.string.sensitivity_prefix)+((progress+10)/10f)+"×");}
         });
-        TextView help=new TextView(this);help.setText("Sostén el celular en tu posición de juego al aplicar. La inclinación activa izquierda/derecha; los pedales siguen siendo táctiles.");form.addView(help);
-        new AlertDialog.Builder(this).setTitle("Conducción por inclinación").setView(form)
-                .setPositiveButton("Aplicar y calibrar",(dialog,which)->{
+        TextView help=new TextView(this);help.setText(UiText.t(GameActivity.this, R.string.tilt_help));form.addView(help);
+        new AlertDialog.Builder(this).setTitle(UiText.t(GameActivity.this, R.string.tilt_title)).setView(form)
+                .setPositiveButton(UiText.t(GameActivity.this, R.string.tilt_apply),(dialog,which)->{
                     tiltEnabled=enabled.isChecked();tiltInvert=invert.isChecked();tiltSensitivity=(sensitivity.getProgress()+10)/10f;
                     options.edit().putBoolean("tilt.enabled",tiltEnabled).putBoolean("tilt.invert",tiltInvert).putFloat("tilt.sensitivity",tiltSensitivity).apply();
                     updateTiltSensor();
-                }).setNegativeButton("Cancelar",null).show();
+                }).setNegativeButton(UiText.t(GameActivity.this, R.string.cancel),null).show();
     }
     private android.hardware.input.InputManager inputManager;
     private final android.hardware.input.InputManager.InputDeviceListener gamepadListener=new android.hardware.input.InputManager.InputDeviceListener() {
@@ -117,6 +117,12 @@ public final class GameActivity extends NativeActivity {
     private static native void nativeTypeText(String value, boolean replace);
     private static native void nativeLanguage(String language);
     private static native void nativeResolution(int width, int height);
+    private static native void nativeHud(int mode);
+    private static native void nativeShaderPolicy(String mode,String workers,String prewarm,String profile);
+    private static native void nativeSurfaceLayout(int width,int height,int left,int top);
+    private static native void nativeVelocity(boolean profiling,String reportPath,String metadata,String cachePath);
+    private static native boolean nativeExportVelocity();
+    private static native void nativeFramePacing(boolean experimental);
     private static native void nativeFrameLimit(int framesPerSecond);
     private static native void nativeWidescreen(boolean enabled);
     private static native void nativeOnlineServer(String host);
@@ -129,35 +135,35 @@ public final class GameActivity extends NativeActivity {
         GameOptions.Option option=GameOptions.find(GameOptions.FPS);
         String saved=GameOptions.get(this,GameOptions.FPS);int selected=0;
         for(int i=0;i<option.values.length;i++)if(option.values[i].equals(saved))selected=i;
-        new AlertDialog.Builder(this).setTitle(option.title)
-                .setSingleChoiceItems(option.labels,selected,(dialog,which)->{
+        new AlertDialog.Builder(this).setTitle(option.title(this))
+                .setSingleChoiceItems(option.labels(this),selected,(dialog,which)->{
                     GameOptions.set(this,GameOptions.FPS,option.values[which]);
                     nativeFrameLimit(Integer.parseInt(option.values[which]));dialog.dismiss();
-                }).setNegativeButton("Cancelar",null).show();
+                }).setNegativeButton(UiText.t(GameActivity.this, R.string.cancel),null).show();
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     private void showTextInput() {
         EditText name = new EditText(this);
         name.setSingleLine(true);
-        name.setHint("Nombre, correo o contraseña");
+        name.setHint(UiText.t(GameActivity.this, R.string.text_hint));
         name.setFilters(new InputFilter[]{new InputFilter.LengthFilter(40)});
         name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD |
                 InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         name.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         CheckBox replace = new CheckBox(this);
-        replace.setText("Reemplazar el nombre actual");replace.setChecked(true);
+        replace.setText(UiText.t(GameActivity.this, R.string.text_replace));replace.setChecked(true);
         LinearLayout form = new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);
         form.setPadding(dp(20), 0, dp(20), 0);form.addView(name);form.addView(replace);
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Escribir en el juego")
+                .setTitle(UiText.t(GameActivity.this, R.string.text_title))
                 .setView(form)
-                .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Escribir", null)
+                .setNegativeButton(UiText.t(GameActivity.this, R.string.cancel), null)
+                .setPositiveButton(UiText.t(GameActivity.this, R.string.text_write), null)
                 .create();
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button -> {
             String value = name.getText().toString();
             if (value.isEmpty() || !value.matches("[A-Za-z0-9 .,=/;_+?:!@#$%&*()-]{1,40}")) {
-                name.setError("Hasta 40 caracteres: letras sin tildes, números y . , - _ @ + ! # $ % & * ( ) = ? / ; :");
+                name.setError(UiText.t(GameActivity.this, R.string.text_validation));
                 return;
             }
             nativeTypeText(value, replace.isChecked());
@@ -167,7 +173,12 @@ public final class GameActivity extends NativeActivity {
         name.requestFocus();
         dialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
     }
+    @Override protected void attachBaseContext(android.content.Context base) {
+        super.attachBaseContext(UiText.wrap(base));
+    }
+
     @Override protected void onCreate(Bundle saved) {
+        setRequestedOrientation(ScreenPolicy.orientation(GameOptions.get(this,GameOptions.ORIENTATION)));
         super.onCreate(saved);
         inputManager=(android.hardware.input.InputManager)getSystemService(INPUT_SERVICE);
         tiltSensors=(android.hardware.SensorManager)getSystemService(SENSOR_SERVICE);
@@ -191,12 +202,37 @@ public final class GameActivity extends NativeActivity {
         nativeResolution(launch.getIntExtra("renderWidth", size[0]), launch.getIntExtra("renderHeight", size[1]));
         String language = launch.getStringExtra("language");
         nativeLanguage(language != null ? language : GameOptions.language(this));
+        java.io.File cache = new java.io.File(getFilesDir(), "velocity-dxvk-cache");
+        java.io.File clearRequest=new java.io.File(getFilesDir(),"velocity-clear-cache");
+        if(clearRequest.isFile()){
+            boolean cleared=true;java.io.File[] files=cache.listFiles();
+            if(files!=null)for(java.io.File file:files)if(file.isFile()&&!file.delete())cleared=false;
+            if(cleared)clearRequest.delete();else Toast.makeText(this,getString(R.string.v5_some_pipeline_caches_could_not_be_removed),Toast.LENGTH_LONG).show();
+        }
+        java.io.File health=new java.io.File(getFilesDir(),"velocity-v4-running");
+        boolean recover=health.isFile();
+        if(recover)Toast.makeText(this,getString(R.string.v5_previous_game_session_ended_unexpectedly_using_synchronous_shader_recovery_),Toast.LENGTH_LONG).show();
+        try{health.createNewFile();}catch(java.io.IOException ignored){}
+        boolean cacheEnabled = GameOptions.get(this, GameOptions.SHADER_CACHE).equals("on");
+        boolean writableCache = cacheEnabled && (cache.isDirectory() || cache.mkdirs());
+        if (cacheEnabled && !writableCache)
+            Toast.makeText(this,UiText.t(GameActivity.this, R.string.cache_unavailable),Toast.LENGTH_LONG).show();
+        nativeShaderPolicy(recover?"off":GameOptions.get(this,GameOptions.ASYNC),GameOptions.get(this,GameOptions.WORKERS),
+                recover?"off":GameOptions.get(this,GameOptions.PREWARM),recover?"compatibility":GameOptions.get(this,GameOptions.PROFILE));
+        nativeHud(GameOptions.get(this,GameOptions.HUD).equals("detailed")?2:GameOptions.get(this,GameOptions.HUD).equals("compact")?1:0);
+        nativeFramePacing(GameOptions.get(this,GameOptions.FRAME_PACING).equals("experimental"));
+        nativeVelocity(BuildConfig.VELOCITY_PROFILING && GameOptions.get(this, GameOptions.PROFILING).equals("on"),
+                new java.io.File(getFilesDir(), "velocity-performance.csv").getAbsolutePath(),
+                Diagnostics.performanceContext(this),
+                writableCache ? cache.getAbsolutePath() : "");
         nativeFrameLimit(launch.getIntExtra("frameCap", Integer.parseInt(GameOptions.get(this, GameOptions.FPS))));
         nativeWidescreen(launch.getBooleanExtra("widescreen", GameOptions.get(this, GameOptions.WIDESCREEN).equals("on")));
         String server = launch.getStringExtra("onlineServer");
         nativeOnlineServer(GameOptions.validServer(server) ? server : GameOptions.onlineServer(this));
         nativeMinimapTop(launch.getBooleanExtra("minimapTop", GameOptions.get(this, GameOptions.MINIMAP).equals("top")));
-        nativeBackBuffers(launch.getIntExtra("backBuffers", Integer.parseInt(GameOptions.get(this, GameOptions.LATENCY))));
+        String graphicsProfile=recover?"compatibility":GameOptions.get(this,GameOptions.PROFILE);
+        nativeBackBuffers(graphicsProfile.equals("compatibility")?1:graphicsProfile.equals("performance")?2:
+                launch.getIntExtra("backBuffers", Integer.parseInt(GameOptions.get(this, GameOptions.LATENCY))));
         nativeCpuTextures(launch.getBooleanExtra("cpuTextures", GameOptions.get(this, GameOptions.TEXTURES).equals("cpu")));
         String[] loader = launch.getStringArrayExtra("driverLoader");
         if (loader == null || loader.length != 4) loader = GpuDrivers.loaderArguments(this);
@@ -206,7 +242,7 @@ public final class GameActivity extends NativeActivity {
         status.setBackgroundColor(0xb0000000);
         status.setTextSize(18);
         status.setPadding(24, 16, 24, 16);
-        status.setText("NFSU2 Android Evolved\nComprobando memoria interna/nfsu2…");
+        status.setText(UiText.t(GameActivity.this, R.string.startup_storage));
         // NativeActivity gives its main window surface to Vulkan; use a separate
         // non-interactive popup surface for the diagnostic text.
         statusWindow = new PopupWindow(status, ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -216,21 +252,49 @@ public final class GameActivity extends NativeActivity {
         controlsWindow = new PopupWindow(touchControls, ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT, false);
         controlsWindow.setClippingEnabled(false);
+        getWindow().getDecorView().setOnApplyWindowInsetsListener((view,insets)->{refreshDisplayLayout(insets);return insets;});
+        getWindow().getDecorView().addOnLayoutChangeListener((v,l,t,r,b,ol,ot,orr,ob)->{if(r-l!=orr-ol||b-t!=ob-ot)refreshDisplayLayout(v.getRootWindowInsets());});
+        refreshDisplayLayout(getWindow().getDecorView().getRootWindowInsets());
     }
     public void setStatus(String message) {
         runOnUiThread(() -> {
             if (statusHideTask != null) status.removeCallbacks(statusHideTask);
-            if (message.contains("Ejecutando entrada CRT")) {
-                status.setText("NFSU2 Android Evolved\n" + message);
+            if (message.equals("guest_boot_running")) {
+                status.setText("Project Velocity\n" + UiText.status(this,message));
                 statusHideTask = () -> {statusHidden=true;if(statusWindow.isShowing())statusWindow.dismiss();};
                 status.postDelayed(statusHideTask, 8000);
             } else {
                 statusHidden=false;
-                status.setText("NFSU2 Android Evolved\n" + message);
+                status.setText("Project Velocity\n" + UiText.status(this,message));
                 if (!statusWindow.isShowing() && hasWindowFocus())
                     statusWindow.showAtLocation(getWindow().getDecorView(), Gravity.TOP | Gravity.START, 0, 0);
             }
         });
+    }
+    private android.hardware.display.DisplayManager displays;
+    private int lastRotation=-1;
+    private final android.hardware.display.DisplayManager.DisplayListener displayListener=new android.hardware.display.DisplayManager.DisplayListener(){
+        public void onDisplayAdded(int id){} public void onDisplayRemoved(int id){}
+        public void onDisplayChanged(int id){if(id==getWindowManager().getDefaultDisplay().getDisplayId())refreshDisplayLayout(getWindow().getDecorView().getRootWindowInsets());}
+    };
+    private void refreshDisplayLayout(android.view.WindowInsets insets){
+        DisplayMetrics metrics=new DisplayMetrics();getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+        int left=0,top=0,right=0,bottom=0;
+        if(insets!=null){
+            if(Build.VERSION.SDK_INT>=30){android.graphics.Insets safe=insets.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.displayCutout());left=safe.left;top=safe.top;right=safe.right;bottom=safe.bottom;}
+            else if(insets.getDisplayCutout()!=null){android.view.DisplayCutout cut=insets.getDisplayCutout();left=cut.getSafeInsetLeft();top=cut.getSafeInsetTop();right=cut.getSafeInsetRight();bottom=cut.getSafeInsetBottom();}
+        }
+        int rotation=getWindowManager().getDefaultDisplay().getRotation();
+        if(rotation!=lastRotation){lastRotation=rotation;tiltCalibrate=true;setTiltKeys(false,false);if(touchControls!=null)touchControls.releaseAll();}
+        android.view.View decor=getWindow().getDecorView();
+        int width=decor.getWidth()>0?decor.getWidth():Math.max(metrics.widthPixels,metrics.heightPixels);
+        int height=decor.getHeight()>0?decor.getHeight():Math.min(metrics.widthPixels,metrics.heightPixels);
+        nativeSurfaceLayout(width,height,left,top);
+        if(touchControls!=null)touchControls.setSafeArea(left,top,right,bottom,!GameOptions.get(this,GameOptions.HUD).equals("off"));
+    }
+    @Override public void onConfigurationChanged(android.content.res.Configuration config){
+        super.onConfigurationChanged(config);
+        refreshDisplayLayout(getWindow().getDecorView().getRootWindowInsets());
     }
     @Override public void onWindowFocusChanged(boolean focused) {
         super.onWindowFocusChanged(focused);
@@ -255,17 +319,25 @@ public final class GameActivity extends NativeActivity {
         }
     }
     @Override protected void onPause() {
+        new java.io.File(getFilesDir(),"velocity-v4-running").delete();
         foreground=false;
+        if(displays!=null)displays.unregisterDisplayListener(displayListener);
         updateTiltSensor();
         if(inputManager!=null)inputManager.unregisterInputDeviceListener(gamepadListener);
         if (statusWindow != null) statusWindow.dismiss();
         if (touchControls != null) {touchControls.removeCallbacks(updateControlMode);touchControls.releaseAll();}
         if (controlsWindow != null) controlsWindow.dismiss();
         super.onPause();
+        // Snapshot off the UI thread, outside the frame path. Launcher shares filesDir.
+        new Thread(() -> nativeExportVelocity(), "velocity-export").start();
     }
     @Override protected void onResume() {
         super.onResume();
+        try{new java.io.File(getFilesDir(),"velocity-v4-running").createNewFile();}catch(java.io.IOException ignored){}
         foreground=true;
+        if(displays==null)displays=(android.hardware.display.DisplayManager)getSystemService(DISPLAY_SERVICE);
+        if(displays!=null)displays.registerDisplayListener(displayListener,new android.os.Handler(android.os.Looper.getMainLooper()));
+        refreshDisplayLayout(getWindow().getDecorView().getRootWindowInsets());
         updateTiltSensor();
         if(inputManager!=null){inputManager.registerInputDeviceListener(gamepadListener,null);updateGamepads();}
         if(touchControls!=null) {touchControls.removeCallbacks(updateControlMode);touchControls.post(updateControlMode);}
@@ -275,7 +347,7 @@ public final class GameActivity extends NativeActivity {
                     && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         if (!allowed && !requested) {
             requested = true;
-            Toast.makeText(this, "Permite acceso a archivos para leer la carpeta nfsu2 de la memoria interna", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, UiText.t(GameActivity.this, R.string.storage_permission), Toast.LENGTH_LONG).show();
             if (Build.VERSION.SDK_INT >= 30) {
                 startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
                         Uri.parse("package:" + getPackageName())));

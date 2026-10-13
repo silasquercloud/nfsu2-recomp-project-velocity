@@ -174,7 +174,7 @@ void socketCreate(){
         ret(handle,3);return;
     }
     if(family!=AF_INET||(type!=SOCK_STREAM&&type!=SOCK_DGRAM))
-        NFS_RUNTIME_LOG(ANDROID_LOG_WARN,"NFSU2","Winsock: socket(af=%u,type=%u,protocol=%u) no soportado desde %08x",family,type,protocol,read32(g_esp));
+        NFS_RUNTIME_LOG(ANDROID_LOG_WARN,"NFSU2","Winsock: socket(af=%u,type=%u,protocol=%u) no soportado @%08x",family,type,protocol,read32(g_esp));
     if(family!=AF_INET){lastError=net::wsaEafnosupport;ret(net::invalidSocket,3);return;}
     if(type!=SOCK_STREAM&&type!=SOCK_DGRAM){lastError=10044;ret(net::invalidSocket,3);return;}  // WSAESOCKTNOSUPPORT
     int fd=::socket(AF_INET,int(type)|SOCK_NONBLOCK|SOCK_CLOEXEC,int(protocol));
@@ -303,7 +303,7 @@ void socketIoctl(){
     switch(command){
     case 0x8004667eu:socket->guestNonBlocking=read32(value)!=0;ret(0,3);return;  // FIONBIO
     case 0x4004667fu:{int pending=0;if(::ioctl(socket->fd,FIONREAD,&pending)){ret(net::failErrno(),3);return;}write32(value,uint32_t(pending));ret(0,3);return;}  // FIONREAD
-    default:throw GuestStop("ioctlsocket comando pendiente: "+hex(command)+" desde "+hex(g_cur_func));
+    default:throw GuestStop("network_unimplemented:ioctlsocket "+hex(command)+" @"+hex(g_cur_func));
     }
 }
 void socketOption(){
@@ -329,11 +329,11 @@ void socketOption(){
             else option.l_onoff=integer()?0:1;
             result=::setsockopt(socket->fd,SOL_SOCKET,SO_LINGER,&option,sizeof option)?net::failErrno():0;break;
         }
-        default:throw GuestStop("setsockopt SOL_SOCKET opcion pendiente: "+hex(name)+" desde "+hex(g_cur_func));
+        default:throw GuestStop("network_unimplemented:setsockopt SOL_SOCKET "+hex(name)+" @"+hex(g_cur_func));
         }
     }else if(level==IPPROTO_TCP&&name==1)result=set(IPPROTO_TCP,TCP_NODELAY,integer());
     else if(level==IPPROTO_IP&&name==4)result=set(IPPROTO_IP,IP_TTL,integer());
-    else throw GuestStop("setsockopt nivel "+hex(level)+" opcion "+hex(name)+" pendiente desde "+hex(g_cur_func));
+    else throw GuestStop("network_unimplemented:setsockopt level "+hex(level)+" option "+hex(name)+" @"+hex(g_cur_func));
     ret(result,5);
 }
 // select over Windows fd_set {u_int count; SOCKET array[64]}.
@@ -434,7 +434,7 @@ void hostName(){
 void wsaIoctl(){
     auto* socket=net::find(arg(0));if(!socket){ret(net::fail(net::wsaEnotsock),9);return;}
     uint32_t code=arg(1),output=arg(4),capacity=arg(5),returned=arg(6);
-    if(arg(7)||arg(8))throw GuestStop("WSAIoctl solapado pendiente desde "+hex(g_cur_func));
+    if(arg(7)||arg(8))throw GuestStop("network_unimplemented:WSAIoctl overlapped @"+hex(g_cur_func));
     if(code==0xc8000014u){
         // SIO_ROUTING_INTERFACE_QUERY: the local address the host routes toward the given destination.
         sockaddr_storage target;socklen_t length=net::guestAddress(arg(2),arg(3),target);
@@ -455,7 +455,7 @@ void wsaIoctl(){
         NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","Winsock: route toward %s uses local %s",to,text);
         ret(0,9);return;
     }
-    if(code!=0x4004747fu)throw GuestStop("WSAIoctl codigo pendiente: "+hex(code)+" desde "+hex(g_cur_func));
+    if(code!=0x4004747fu)throw GuestStop("network_unimplemented:WSAIoctl "+hex(code)+" @"+hex(g_cur_func));
     std::vector<std::array<uint8_t,76>> rows;ifaddrs* list=nullptr;
     if(getifaddrs(&list)==0){
         for(auto* entry=list;entry;entry=entry->ifa_next){
@@ -492,7 +492,7 @@ void netbios(){
         std::memset(ptr(buffer,length),0,length);std::memcpy(ptr(buffer,6),mac,6);
         uint16_t written=std::min<uint16_t>(length,60);std::memcpy(block+8,&written,2);break;
     }
-    default:throw GuestStop("Netbios comando pendiente: "+hex(command)+" desde "+hex(g_cur_func));
+    default:throw GuestStop("network_unimplemented:Netbios "+hex(command)+" @"+hex(g_cur_func));
     }
     block[1]=status;block[49]=status;ret(status,1);
 }

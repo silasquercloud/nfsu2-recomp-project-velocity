@@ -50,6 +50,35 @@ void checkCompressedFallback(){
     for(unsigned row=0;row<5;++row)for(unsigned byte=0;byte<32;++byte)require(native[row*32+byte]==(byte<20?255:0xaa),"DXT fallback did not upload RGBA or damaged padding");
     releaseLock(0xdef,0);freeGuest(out);compressedViews.clear();
 }
+void checkCompressedPartial(){
+    auto shadow=std::make_shared<CompressedTexture>(D3DFMT_DXT1,9,7,2,6);
+    compressedViews[0xf01]={shadow,0,0};
+    const uint32_t subresource=5*32;
+    RECT rectangle{4,4,8,7};
+    std::vector<uint8_t> native(64*7+16,0xaa);
+    D3DSURFACE_DESC desc{};desc.Width=9;desc.Height=7;desc.Format=D3DFMT_A8B8G8R8;
+    D3DLOCKED_RECT locked{64,native.data()+4*64+4*4};uint32_t out=allocateGuest(8);
+    require(SUCCEEDED(lockPixels(0xf01,subresource,desc,locked,&rectangle,0,out)),"Partial cube lock failed");
+    uint32_t guest[2];std::memcpy(guest,pointer(out),8);
+    uint8_t white[8]={255,255,0,0,0,0,0,0};std::memcpy(pointer(guest[1]),white,8);
+    copyLockBack(0xf01,subresource);releaseLock(0xf01,subresource);
+    for(unsigned row=0;row<7;++row)for(unsigned byte=0;byte<64;++byte)
+        require(native[row*64+byte]==(row>=4&&byte>=16&&byte<32?255:0xaa),"Partial cube upload modified neighbors or padding");
+    for(unsigned byte=64*7;byte<native.size();++byte)require(native[byte]==0xaa,"Partial cube guard changed");
+    for(unsigned face=0;face<6;++face)for(unsigned level=0;level<2;++level){
+        const auto& raw=shadow->bytes(face,level);
+        for(unsigned byte=0;byte<raw.size();++byte){
+            uint8_t expected=face==5&&level==0&&byte>=32&&byte<40?white[byte-32]:0;
+            require(raw[byte]==expected,"Partial upload modified wrong face, mip or compressed block");
+        }
+    }
+    auto before=native;
+    require(SUCCEEDED(lockPixels(0xf01,subresource,desc,locked,&rectangle,D3DLOCK_READONLY,out)),"Read-only partial lock failed");
+    uint32_t readonlyGuest[2];std::memcpy(readonlyGuest,pointer(out),8);
+    std::memset(pointer(readonlyGuest[1]),0,8);
+    copyLockBack(0xf01,subresource);require(native==before,"Read-only partial lock uploaded pixels");
+    releaseLock(0xf01,subresource);freeGuest(out);compressedViews.clear();
+}
 }
 int main(){try{
     uint8_t white[32]{};for(unsigned i=0;i<4;++i){white[i*8]=white[i*8+1]=255;}
@@ -66,5 +95,15 @@ int main(){try{
     checkPixels(D3DFMT_A8B8G8R8,3,2,32,D3DLOCK_READONLY);
     checkPixels(D3DFMT_DXT1,5,5,24,0);
     checkCompressedFallback();
+    checkCompressedPartial();
+    clearLockScratch();auto misses=lockScratchMisses,hits=lockScratchHits;
+    for(unsigned i=0;i<1000;++i){auto a=acquireLockScratch(65536);recycleLockScratch(a,65536);}
+    require(lockScratchMisses-misses==1&&lockScratchHits-hits==999,"Repeated locks should allocate once");
+    auto a=acquireLockScratch(65536),b=acquireLockScratch(65536);
+    require(a!=b,"Concurrent locks alias scratch storage");recycleLockScratch(a,65536);recycleLockScratch(b,65536);
+    auto large=acquireLockScratch(9*1024*1024);recycleLockScratch(large,9*1024*1024);
+    require(lockScratchBytes<=8*1024*1024,"Scratch cache exceeds budget");
+    clearLockScratch();require(lockScratchBytes==0,"Scratch cache not released at shutdown");
+    std::puts("Scratch reuse: 1000 sequential locks, 1 allocation / 999 reuse; active locks isolated, 8 MiB cap, cleanup verified");
     std::puts("Graphics memory and DXT decoding passed: native/guest pointers, row pitch, read-only, guard bytes, edge blocks, transparency and alpha interpolation");return 0;
 }catch(const std::exception& error){std::fprintf(stderr,"%s\n",error.what());return 1;}}

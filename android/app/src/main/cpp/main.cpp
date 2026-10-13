@@ -1,6 +1,7 @@
 #include <android_native_app_glue.h>
 #include <android/log.h>
 #include <vulkan/vulkan.h>
+#include <sys/resource.h>
 #include <algorithm>
 #include <vector>
 #include <stdexcept>
@@ -12,6 +13,7 @@
 #include "game_data.h"
 #include "guest_runtime.h"
 #include "d3d9_bridge.h"
+#include "velocity_profile.h"
 #include "guest_boot_worker.h"
 #include "gamepad_input.h"
 #include "vulkan_driver.h"
@@ -236,13 +238,21 @@ static void publishPad(){
     const float axes[6]={state.leftX,state.leftY,state.leftTrigger-state.rightTrigger,state.rightX,state.rightY,0.f};
     setGuestPad(axes,state.buttons,state.hatX,state.hatY);
 }
+extern "C" void dxvkAndroidResetHudClock();
+extern "C" void dxvkAndroidSurfaceLayout(uint32_t,uint32_t,uint32_t,uint32_t);
+extern "C" void dxvkAndroidSavePipelineCaches();
 static void onCommand(android_app* app, int32_t command) {
     auto& h = *static_cast<Host*>(app->userData);
-    if (command == APP_CMD_RESUME) { h.resumed = true; h.failed = false; }
-    if (command == APP_CMD_PAUSE) { setGuestPaused(true);gamepad.releaseAll(setPadKey);clearGuestInput();h.resumed = false; h.renderer.stop();acknowledgeD3D9Surface(false);setD3D9HostWindow(nullptr); }
-    if (command == APP_CMD_TERM_WINDOW || command == APP_CMD_WINDOW_RESIZED || command == APP_CMD_INIT_WINDOW) {
+    if (command == APP_CMD_RESUME) { dxvkAndroidResetHudClock();h.resumed = true; h.failed = false; }
+    if (command == APP_CMD_PAUSE) { dxvkAndroidResetHudClock();setGuestPaused(true);gamepad.releaseAll(setPadKey);clearGuestInput();h.resumed = false; h.renderer.stop();acknowledgeD3D9Surface(false);setD3D9HostWindow(nullptr); }
+    if (command == APP_CMD_TERM_WINDOW) {
         setGuestPaused(true);h.renderer.stop(); h.failed = false;
         acknowledgeD3D9Surface(false);setD3D9HostWindow(nullptr);
+    }
+    if(command==APP_CMD_INIT_WINDOW||command==APP_CMD_WINDOW_RESIZED){
+        h.failed=false;h.renderer.stop();
+        // Keep an existing guest/device and window generation on size/rotation changes.
+        if(app->window)setD3D9HostWindow(app->window);
     }
 }
 static int32_t onInput(android_app*,AInputEvent* event){
@@ -318,7 +328,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nat
     customVulkanDriver=true;
     void* handle=nfsOpenVulkan(h.c_str(),t.c_str(),d.c_str(),l.c_str());
     auto entry=nfsVulkanEntry(handle);
-    if(!entry){customVulkanError="No se pudo cargar el driver Vulkan "+l+". Elige el driver del sistema en el launcher.";return;}
+    if(!entry){customVulkanError="driver_custom_error:"+l;return;}
     dxvkAndroidSetInstanceProcAddr(entry);
 }
 void android_main(android_app* app) {
@@ -360,7 +370,7 @@ void android_main(android_app* app) {
             auto status=host.guestWorker.status();
             if(status!=host.guestStatus){
                 host.guestStatus=status;
-                showStatus(app,("Datos accesibles: memoria interna/nfsu2\nVulkan 1.1: presentación activa\n"+status).c_str());
+                showStatus(app,status.c_str());
             }
             if (host.renderer.device&&!host.renderer.draw()) host.renderer.stop();
         } catch (const std::exception& e) {
@@ -371,4 +381,48 @@ void android_main(android_app* app) {
     }
     host.renderer.stop();
     acknowledgeD3D9Surface(false);setD3D9HostWindow(nullptr);
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeVelocity(
+    JNIEnv* env,jclass,jboolean profiling,jstring report,jstring metadata,jstring cache){
+    const char* reportPath=env->GetStringUTFChars(report,nullptr);
+    if(!reportPath)return;
+    const std::string backendPath=std::string(reportPath)+".backend";
+    setenv("NFS_VELOCITY_BACKEND_REPORT",backendPath.c_str(),1);
+    std::remove(backendPath.c_str());
+    const char* cachePath=env->GetStringUTFChars(cache,nullptr);
+    if(cachePath){
+        velocity::configure(profiling==JNI_TRUE,reportPath);
+        const char* details=env->GetStringUTFChars(metadata,nullptr);
+        if(details){velocity::metadata(details);env->ReleaseStringUTFChars(metadata,details);}
+        setD3D9ShaderCache(cachePath);
+    }
+    if(reportPath)env->ReleaseStringUTFChars(report,reportPath);
+    if(cachePath)env->ReleaseStringUTFChars(cache,cachePath);
+}
+extern "C" JNIEXPORT jboolean JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeExportVelocity(JNIEnv*,jclass){
+    dxvkAndroidSavePipelineCaches();
+    rusage usage{};if(getrusage(RUSAGE_SELF,&usage)==0)velocity::metadata("process_peak_rss_bytes="+std::to_string(uint64_t(usage.ru_maxrss)*1024));
+    velocity::metadata("guest_committed_bytes="+std::to_string(guestCommittedBytes()));
+    const bool exported=velocity::exportReport();
+    velocity::resetFrameClock(); // Exclude background time from the next interval.
+    return exported?JNI_TRUE:JNI_FALSE;
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeFramePacing(JNIEnv*,jclass,jboolean experimental){
+    setGuestExperimentalFramePacing(experimental==JNI_TRUE);
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeHud(JNIEnv*,jclass,jint mode){
+    setD3D9Hud(mode);
+}
+extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeSurfaceLayout(JNIEnv*,jclass,jint width,jint height,jint left,jint top){
+    if(width>0&&height>0)dxvkAndroidSurfaceLayout(width,height,std::max(0,int(left)),std::max(0,int(top)));
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_nfsu2_androidevolved_GameActivity_nativeShaderPolicy(
+    JNIEnv* env,jclass,jstring mode,jstring workers,jstring prewarm,jstring profile){
+    const char* names[]={"NFS_VELOCITY_ASYNC","NFS_VELOCITY_WORKERS","NFS_VELOCITY_PREWARM","NFS_VELOCITY_GRAPHICS_PROFILE"};
+    jstring values[]={mode,workers,prewarm,profile};
+    for(unsigned i=0;i<4;++i){const char* text=env->GetStringUTFChars(values[i],nullptr);if(text){setenv(names[i],text,1);env->ReleaseStringUTFChars(values[i],text);}}
 }

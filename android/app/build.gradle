@@ -1,4 +1,5 @@
 plugins { id 'com.android.application' }
+def velocityProfiling = (project.findProperty('nfsVelocityProfiling') ?: 'true').toBoolean()
 android {
     namespace 'com.nfsu2.androidevolved'
     compileSdk 35
@@ -7,12 +8,23 @@ android {
         applicationId 'com.nfsu2.androidevolved'
         minSdk 29
         targetSdk 35
-        versionCode 14
-        versionName '0.13.1'
+        versionCode 19
+        versionName '0.14.0-velocity.5'
+        buildConfigField 'boolean', 'VELOCITY_PROFILING', velocityProfiling.toString()
+        manifestPlaceholders = [velocityProfileable: velocityProfiling.toString()]
         // -PnfsAbi=armeabi-v7a builds the separate 32-bit APK.
         ndk { abiFilters(project.findProperty('nfsAbi') ?: 'arm64-v8a') }
-        externalNativeBuild { cmake { arguments '-DANDROID_STL=c++_static' } }
+        externalNativeBuild { cmake { arguments '-DANDROID_STL=c++_static', '-DNFS_VELOCITY_PROFILING=' + (velocityProfiling ? 'ON' : 'OFF') } }
     }
+    buildTypes {
+        release {
+            // Keep the .1 development certificate so test installations can upgrade.
+            signingConfig signingConfigs.debug
+            debuggable false
+            minifyEnabled false
+        }
+    }
+    buildFeatures { buildConfig true }
     externalNativeBuild { cmake { path file('src/main/cpp/CMakeLists.txt'); version '3.30.5' } }
     // adrenotools opens its namespace hook libraries by path from nativeLibraryDir.
     packaging { jniLibs { useLegacyPackaging true } }

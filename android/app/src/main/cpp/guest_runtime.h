@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <string>
 #include <vector>
 // Maps the owner's PE data, binds imports, tests lifted code and attempts CRT
@@ -24,3 +25,7 @@ void typeGuestText(const std::vector<uint32_t>& characters);
 void setGuestLanguage(const char* language);
 void setGuestResolution(unsigned width,unsigned height);
 void setGuestFrameLimit(unsigned framesPerSecond);
+
+void setGuestExperimentalFramePacing(bool enabled);
+
+uint64_t guestCommittedBytes();

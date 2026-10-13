@@ -4,9 +4,11 @@
 #include "guest_memory.h"
 #include "guest_heap.h"
 #include "runtime_log.h"
+#include "velocity_profile.h"
+#include "velocity_frame_pacer.h"
+#include "nfs_widescreen.h"
 #if defined(__ANDROID__) || defined(NFS_D3D9_BACKEND)
 #include "d3d9_bridge.h"
-#include "nfs_widescreen.h"
 #endif
 #include <array>
 #include <vector>
@@ -58,6 +60,7 @@ namespace {
 std::atomic<uint32_t> displayWidth{1280},displayHeight{720};
 std::atomic<uint32_t> renderWidth{0},renderHeight{0};
 std::atomic<unsigned> frameLimit{0};
+std::atomic<bool> experimentalFramePacing{false};
 std::string hex(uint32_t va) {
     std::ostringstream out; out << "0x" << std::hex << std::setw(8) << std::setfill('0') << va;
     return out.str();
@@ -156,6 +159,7 @@ bool generatedTestActive=false;unsigned generatedTestCalls=0;
 constexpr uint32_t generatedTestTarget=0x7b000020u;
 void yieldGuestMachine(unsigned milliseconds=0) {
     if(!machineLease||!machineLease->owns_lock())throw GuestStop("Guest scheduler ownership missing");
+    velocity::Scope profile(velocity::Metric::SchedulerWait);
     State saved;saved.save();machineLease->unlock();
     if(milliseconds)std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));else std::this_thread::yield();
     machineLease->lock();saved.load();
@@ -204,7 +208,7 @@ uint32_t allocate(uint32_t bytes) {
 }
 void unsupported() {
     uint32_t index = (lastImport-importBase)/16;
-    throw GuestStop("HLE pendiente: " + imports.at(index).name + " desde " + hex(g_cur_func));
+    throw GuestStop("hle_missing:" + imports.at(index).name + " @" + hex(g_cur_func));
 }
 void getVersion() {
     uint32_t out = arg(0), bytes=read32(out);
@@ -240,29 +244,23 @@ uint32_t d3dToken{};
 void direct3DCreate(){ret(createGuestD3D9(arg(0)),1);}
 void freeD3DGuest(uint32_t address){heaps->free(GuestHeaps::process,address);}
 void d3dDispatch(){uint32_t args[32];std::memcpy(args,ptr(g_esp+4,sizeof args),sizeof args);uint32_t count=0;uint32_t token=d3dToken;
-    static uint64_t bridgeCalls=0;static std::chrono::nanoseconds bridgeTime{},presentTime{};
-    // Time one call in 64 (and every Present) so the statistic does not cost
-    // two clock reads on each of the ~40k calls in a race frame.
-    bool timed=(++bridgeCalls&63u)==0||token==0x7e002110u;
-    std::chrono::steady_clock::time_point bridgeStart;if(timed)bridgeStart=std::chrono::steady_clock::now();uint32_t result;
+    uint32_t result;
     try{result=dispatchGuestD3D9(token,args,&count);}catch(...){
         NFS_RUNTIME_LOG(ANDROID_LOG_ERROR,"NFSU2","D3D9 guest caller=%08x stack=%08x token=%08x self=%08x",g_cur_func,g_esp,token,args[0]);throw;}
-    if(timed){auto spent=std::chrono::steady_clock::now()-bridgeStart;bridgeTime+=token==0x7e002110u?spent:spent*64;presentTime+=token==0x7e002110u?spent:std::chrono::nanoseconds{};}
     if(token==0x7e002110u)nfs_widescreen_apply_frame_rate();
     if(token==0x7e002110u&&result==0){
-        static unsigned appliedLimit=0;static auto nextFrame=std::chrono::steady_clock::now();
+        static velocity::FramePacer pacer;
         unsigned cap=frameLimit.load(std::memory_order_relaxed);
-        auto now=std::chrono::steady_clock::now();
-        if(cap!=appliedLimit||now>nextFrame+std::chrono::milliseconds(200)){
-            appliedLimit=cap;nextFrame=now;
+        const auto now=std::chrono::steady_clock::now();
+        const auto nowNs=std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+        const auto target=pacer.deadline(uint64_t(nowNs),cap,experimentalFramePacing.load(std::memory_order_relaxed));
+        if(cap&&target>uint64_t(nowNs)){
+            velocity::Scope limiter(velocity::Metric::FrameLimiter);
+            std::this_thread::sleep_until(now+std::chrono::nanoseconds(target-uint64_t(nowNs)));
         }
-        if(cap){nextFrame+=std::chrono::nanoseconds(1000000000ull/cap);if(nextFrame>now)std::this_thread::sleep_until(nextFrame);}
-        static unsigned frames=0;static auto since=std::chrono::steady_clock::now();
-        if(++frames==120){auto now=std::chrono::steady_clock::now();double seconds=std::chrono::duration<double>(now-since).count();
-            NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","Guest D3D9 presentation %.1f FPS over %.2f seconds; bridge ~%.2f ms/frame (present %.2f), %.0f calls/frame",
-                frames/seconds,seconds,double(bridgeTime.count())/1e6/frames,double(presentTime.count())/1e6/frames,double(bridgeCalls)/frames);
-            frames=0;since=now;bridgeTime=presentTime=std::chrono::nanoseconds{};bridgeCalls=0;}
-    }ret(result,count);}
+        velocity::frame();
+    }else if(token==0x7e00d030u&&result==0){velocity::frame();}
+    ret(result,count);}
 #endif
 // threadStart: a thread procedure may be stdcall or cdecl; Windows exits the thread right after either.
 uint32_t callGuest(uint32_t va,const std::vector<uint32_t>& args,uint32_t cleanup=0,bool threadStart=false);
@@ -622,6 +620,10 @@ extern "C" recomp_func_t recomp_lookup_manual(uint32_t va) {
     return nfs_override_lookup(va);
 }
 extern "C" recomp_func_t recomp_lookup_import(uint32_t va) {
+#if NFS_VELOCITY_PROFILING
+    static uint64_t lookupSample=0;
+    velocity::Scope timing(velocity::Metric::ImportLookup,256,velocity::enabled()&&((++lookupSample&255u)==0));
+#endif
     checkGuestProgress();
     if(va>=soundMethodBase+0x1000&&va<soundMethodBase+0x3000&&!(va%16)){soundToken=va;return soundDispatch;}
     if(va>=inputMethodBase+0x1000&&va<inputMethodBase+0x5000&&!(va%16)){inputToken=va;return inputDispatch;}  // kinds 1-4: DirectInput, keyboard, mouse, gamepad
@@ -743,7 +745,7 @@ std::string connectGuestRuntime(const char* executable) {
         shutdownD3D9Bridge();
 #endif
         original.load();
-        return "Entrada guest terminada: "+std::to_string(result);
+        return "guest_boot_finished:"+std::to_string(result);
     } catch (const std::exception& e) {
         NFS_RUNTIME_LOG(ANDROID_LOG_WARN,"NFSU2","Guest integration boundary: %s",e.what());
         joinGuestThreads(guard);machineLease=nullptr;shutdownGuestSound();
@@ -751,7 +753,7 @@ std::string connectGuestRuntime(const char* executable) {
         shutdownD3D9Bridge();
 #endif
         original.load();
-        return std::string("Arranque guest detenido: ")+e.what();
+        return std::string("guest_boot_stopped:")+e.what();
     }
 }
 void requestGuestRuntimeStop() {stopRequested=true;}
@@ -795,3 +797,7 @@ void setGuestLanguage(const char* language){
         if(language&&std::strcmp(known,language)==0){guestLanguage=known;NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","Selected guest language: %s",known);return;}
     guestLanguage="Spanish";
 }
+
+void setGuestExperimentalFramePacing(bool enabled){experimentalFramePacing.store(enabled,std::memory_order_relaxed);}
+
+uint64_t guestCommittedBytes(){std::lock_guard<MachineMutex> lock(machine);return memory?memory->committedBytes():0;}

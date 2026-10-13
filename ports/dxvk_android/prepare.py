@@ -63,6 +63,73 @@ replace('src/d3d9/d3d9_fixed_function.cpp', 'namespace dxvk {\n', 'namespace dxv
 # DXVK warnings and errors reach logcat (tag DXVK) for tester reports.
 replace('src/util/log/log.cpp', '#include "log.h"\n', '#include "log.h"\n#ifdef __ANDROID__\n#include <android/log.h>\n#endif\n')
 replace('src/util/log/log.cpp', '        std::cerr << prefix << line << std::endl;\n', '        std::cerr << prefix << line << std::endl;\n#ifdef __ANDROID__\n        // stderr goes nowhere on Android: send warnings and errors to logcat,\n        // so tester reports (logcat.txt) show why DXVK failed.\n        if (level >= LogLevel::Warn)\n          __android_log_print(level >= LogLevel::Error ? ANDROID_LOG_ERROR : ANDROID_LOG_WARN, "DXVK", "%s", line.c_str());\n#endif\n')
+# Project Velocity: optional host-side timing; never remove/shorten GPU waits.
+for path, signature, metric in (
+    ("src/dxvk/dxvk_cmdlist.cpp", "  VkResult DxvkCommandList::synchronize() {", "FenceWait"),
+):
+    replace(path, signature, signature + '\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::' + metric + ');\n#endif')
+for path in ("src/dxvk/dxvk_cmdlist.cpp", "src/vulkan/vulkan_presenter.cpp",
+             "src/dxvk/dxvk_graphics.cpp", "src/dxvk/dxvk_compute.cpp"):
+    file = args.output / path
+    file.write_text('#if NFS_VELOCITY_PROFILING\n#include "velocity_profile.h"\n#endif\n' + file.read_text())
+replace("src/dxvk/dxvk_cmdlist.cpp", "    return m_vkd->vkQueueSubmit(queue, 1, &submitInfo, fence);",
+    "#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::VulkanSubmit);\n#endif\n    return m_vkd->vkQueueSubmit(queue, 1, &submitInfo, fence);")
+replace("src/dxvk/dxvk_graphics.cpp", "    const DxvkRenderPass*                renderPass) const {", "    const DxvkRenderPass*                renderPass) const {\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::PipelineCompile);\n#endif")
+replace("src/dxvk/dxvk_compute.cpp", "  VkPipeline DxvkComputePipeline::createPipeline(\n    const DxvkComputePipelineStateInfo& state) const {", "  VkPipeline DxvkComputePipeline::createPipeline(\n    const DxvkComputePipelineStateInfo& state) const {\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope profile(velocity::Metric::PipelineCompile);\n#endif")
+replace("src/dxvk/dxvk_cmdlist.h", "#pragma once", '#pragma once\n#if NFS_VELOCITY_PROFILING\n#include "velocity_profile.h"\n#endif')
+replace("src/dxvk/dxvk_cmdlist.h", "      m_vkd->vkCmdBindPipeline(m_execBuffer,", "#if NFS_VELOCITY_PROFILING\n      if(velocity::enabled())velocity::record(velocity::Metric::PipelineBind,0);\n#endif\n      m_vkd->vkCmdBindPipeline(m_execBuffer,")
+# Additional bounded diagnostics for low-end Vulkan 1.1 devices.
+for path, signature, metric in (
+    ("src/d3d9/d3d9_device.cpp", "        DWORD                             MapFlags) {", "ResourceWait"),
+    ("src/d3d9/d3d9_device.cpp", "  void D3D9DeviceEx::SynchronizeCsThread() {", "CsWait"),
+    ("src/d3d9/d3d9_shader.cpp", "            DxsoModule*           pModule) {", "ShaderTranslate"),
+):
+    replace(path, signature, signature + '\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope timing(velocity::Metric::' + metric + ');\n#endif')
+for path in ("src/d3d9/d3d9_device.cpp", "src/d3d9/d3d9_shader.cpp", "src/dxvk/dxvk_device.cpp"):
+    file = args.output / path
+    file.write_text('#if NFS_VELOCITY_PROFILING\n#include "velocity_profile.h"\n#endif\n' + file.read_text())
+replace("src/vulkan/vulkan_presenter.cpp", "  VkResult Presenter::recreateSwapChain(const PresenterDesc& desc) {",
+        "  VkResult Presenter::recreateSwapChain(const PresenterDesc& desc) {\n#if NFS_VELOCITY_PROFILING\n    velocity::count(velocity::Counter::SwapchainRecreates);\n#endif")
+replace("src/vulkan/vulkan_presenter.cpp", "    VkResult status = m_vkd->vkQueuePresentKHR(m_device.queue, &info);",
+        "    VkResult status;\n    {\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope timing(velocity::Metric::VulkanPresent);\n#endif\n    status = m_vkd->vkQueuePresentKHR(m_device.queue, &info);\n#if NFS_VELOCITY_PROFILING\n    velocity::vulkanResult(status);\n#endif\n    }")
+# The present call pre-acquires the next image; isolate that wait inside Present.
+import re
+file = args.output / "src/vulkan/vulkan_presenter.cpp"
+text = file.read_text()
+text, matches = re.subn(r'(m_acquireStatus = m_vkd->vkAcquireNextImageKHR\(.*?&m_imageIndex\);)',
+    r'{\n#if NFS_VELOCITY_PROFILING\n    velocity::Scope acquireTiming(velocity::Metric::VulkanAcquire);\n#endif\n    \1\n#if NFS_VELOCITY_PROFILING\n    velocity::vulkanResult(m_acquireStatus);\n#endif\n    }',text,flags=re.S)
+if matches != 2:
+    raise SystemExit("Acquire profiling patch mismatch")
+file.write_text(text)
+replace("src/dxvk/dxvk_cmdlist.cpp", "    return m_vkd->vkQueueSubmit(queue, 1, &submitInfo, fence);",
+        "    VkResult result = m_vkd->vkQueueSubmit(queue, 1, &submitInfo, fence);\n#if NFS_VELOCITY_PROFILING\n    velocity::vulkanResult(result);\n#endif\n    return result;")
+replace("src/dxvk/dxvk_device.cpp", "    auto queueFamilies = m_adapter->findQueueFamilies();",
+        "#if NFS_VELOCITY_PROFILING\n    const auto& props = m_adapter->deviceProperties();\n    velocity::metadata(str::format(\"gpu=\", props.deviceName, \" api=\", props.apiVersion, \" vendor=\", props.vendorID, \" device=\", props.deviceID, \" driverVersion=\", props.driverVersion, \" bc=\", m_features.core.features.textureCompressionBC));\n    velocity::metadata(\"dxvk=native-1.9.2b; Vulkan 1.1 backend; no driver bundled\");\n#endif\n    auto queueFamilies = m_adapter->findQueueFamilies();")
+# Report limits/actual adapter capabilities once; no per-draw capability queries.
+replace("src/dxvk/dxvk_device.cpp", "    const auto& props = m_adapter->deviceProperties();", "    const auto& props = m_adapter->deviceProperties();\n    velocity::metadata(str::format(\"limits: image2d=\", props.limits.maxImageDimension2D, \" descriptor_sets=\", props.limits.maxBoundDescriptorSets, \" samplers=\", props.limits.maxPerStageDescriptorSamplers, \" uniform_range=\", props.limits.maxUniformBufferRange, \" allocations=\", props.limits.maxMemoryAllocationCount));\n    for (VkFormat format : { VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_FORMAT_BC2_UNORM_BLOCK, VK_FORMAT_BC3_UNORM_BLOCK, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_D24_UNORM_S8_UINT })\n      velocity::metadata(str::format(\"format=\", int(format), \" optimal_features=\", m_adapter->formatProperties(format).optimalTilingFeatures));")
+# Velocity .3: persistent device-specific driver cache, without serializing
+# parallel compilers with each other. Background snapshots take the writer lock.
+for name in ("dxvk_pipecache.h", "dxvk_pipecache.cpp"):
+    shutil.copy2(pathlib.Path(__file__).parent / ("velocity_" + name.removeprefix("dxvk_")), args.output / "src/dxvk" / name)
+replace("src/dxvk/dxvk_pipemanager.cpp", "new DxvkPipelineCache(device->vkd())", "new DxvkPipelineCache(device->vkd(), device->adapter()->deviceProperties())")
+replace("src/dxvk/dxvk_graphics.cpp", "    VkPipeline pipeline = VK_NULL_HANDLE;", "    auto cacheAccess = m_pipeMgr->m_cache->compilationLock();\n    VkPipeline pipeline = VK_NULL_HANDLE;")
+replace("src/dxvk/dxvk_compute.cpp", "    VkPipeline pipeline = VK_NULL_HANDLE;", "    auto cacheAccess = m_pipeMgr->m_cache->compilationLock();\n    VkPipeline pipeline = VK_NULL_HANDLE;")
+# Keep each ANativeWindow alive until its associated Vulkan surface is destroyed.
+replace("src/vulkan/vulkan_presenter.cpp", '#include "vulkan_presenter.h"', '#include "vulkan_presenter.h"\nextern "C" void dxvkAndroidReleaseSurface(VkSurfaceKHR);')
+replace("src/vulkan/vulkan_presenter.cpp", "m_vki->vkDestroySurfaceKHR(m_vki->instance(), m_surface, nullptr);", "m_vki->vkDestroySurfaceKHR(m_vki->instance(), m_surface, nullptr);\n    dxvkAndroidReleaseSurface(m_surface);\n    m_surface = VK_NULL_HANDLE;")
+# Persistent acquire failure must not spin forever recreating swapchains.
+replace("src/d3d9/d3d9_swapchain.cpp", "      while (status != VK_SUCCESS && status != VK_SUBOPTIMAL_KHR) {", "      unsigned recoveryAttempts = 0;\n      while (status != VK_SUCCESS && status != VK_SUBOPTIMAL_KHR) {\n        if (++recoveryAttempts > 3)\n          throw DxvkError(str::format(\"Velocity: image acquisition failed after bounded recovery; VkResult=\", status));")
+# Existing Vulkan HUD renderer; no Android overlay window/permission.
+shutil.copy2(pathlib.Path(__file__).parent / "velocity_hud.h", args.output / "src/dxvk/hud/velocity_hud.h")
+replace("src/dxvk/hud/dxvk_hud.cpp", '#include "dxvk_hud.h"', '#include "dxvk_hud.h"\n#include "velocity_hud.h"')
+replace("src/dxvk/hud/dxvk_hud.cpp", '    addItem<HudVersionItem>("version", -1);', '    addItem<HudVelocityItem>("velocity", -1, device, m_hudItems.getOption<float>("detail", 0.0f) != 0.0f);\n    addItem<HudVersionItem>("version", -1);')
+replace("src/dxvk/hud/dxvk_hud.cpp", "    return new Hud(device);", '    const auto configured = env::getEnvVar("DXVK_HUD");\n    if (configured == "0" || (configured.empty() && device->config().hud.empty()))\n      return nullptr;\n    return new Hud(device);')
+replace("src/dxvk/hud/dxvk_hud_item.cpp", '#include "dxvk_hud_item.h"', '#include "dxvk_hud_item.h"\nextern "C" void dxvkAndroidHudOffset(uint32_t, uint32_t, float*, float*);')
+replace("src/dxvk/hud/dxvk_hud_item.cpp", '    HudPos position = { 8.0f, 8.0f };', '    HudPos position = { 8.0f, 8.0f };\n    const auto size = renderer.surfaceSize();\n    float left = 0, top = 0;\n    dxvkAndroidHudOffset(size.width, size.height, &left, &top);\n    position.x += left; position.y += top;')
+replace("src/vulkan/vulkan_presenter.cpp", '#include "vulkan_presenter.h"', '#include "vulkan_presenter.h"\n#include "velocity_surface.h"')
+replace("src/vulkan/vulkan_presenter.cpp", '    swapInfo.preTransform           = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;', '    swapInfo.preTransform = velocity::compositorTransform(caps.supportedTransforms);\n    if (!swapInfo.preTransform) {\n      Logger::err("Velocity: surface requires application prerotation; identity/inherit compositor path unavailable");\n      return VK_ERROR_FEATURE_NOT_PRESENT;\n    }\n    velocity::metadata(str::format("present_mode=", m_info.presentMode, " image_count=", m_info.imageCount, " extent=", m_info.imageExtent.width, "x", m_info.imageExtent.height, " current_transform=", caps.currentTransform, " selected_transform=", swapInfo.preTransform));')
+from prepare_velocity4 import apply
+apply(args.output)
 (args.output / "version.h").write_text('#define DXVK_VERSION "native-1.9.2b-android-arm64"\n')
 (args.output / "PINNED_REVISION").write_text(PIN + "\n")
 print("Prepared DXVK " + PIN)

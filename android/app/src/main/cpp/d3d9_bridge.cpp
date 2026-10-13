@@ -1,5 +1,6 @@
 #include "d3d9_bridge.h"
 #include "runtime_log.h"
+#include "velocity_profile.h"
 #include "dxt_shadow.h"
 #include <d3d9.h>
 #include <algorithm>
@@ -15,10 +16,14 @@
 #include <chrono>
 #include <thread>
 #include <cstdlib>
+#include <cstdio>
 
 extern "C" IDirect3D9* Direct3DCreate9(UINT sdk);
 extern "C" void dxvkAndroidSetWindow(ANativeWindow* window);
 extern "C" HWND dxvkAndroidGetWindowHandle();
+#ifdef __ANDROID__
+extern "C" bool dxvkAndroidHasPipelineFailure();
+#endif
 extern "C" void dxvkAndroidSetRenderSize(uint32_t width,uint32_t height);
 void setD3D9RenderSize(unsigned width,unsigned height){dxvkAndroidSetRenderSize(width,height);}
 #ifndef __ANDROID__
@@ -99,6 +104,7 @@ std::atomic<uint32_t> configuredBackBuffers{2};
 // Launcher "Texturas comprimidas: convertir en CPU": DXT decoded to RGBA8 even when the
 // driver reports BC support, for drivers whose BC sampling is broken.
 std::atomic<bool> forceCpuTextures{false};
+std::string shaderCacheDirectory; // Startup-only, before device creation.
 uint32_t hostBackBufferCount(uint32_t requested){
     uint32_t count=std::max(requested,configuredBackBuffers.load());
     static bool logged=false;
@@ -127,11 +133,18 @@ void describeOriginal(uint32_t address,D3DSURFACE_DESC* desc){auto view=compress
 void setD3D9Compatibility(bool cpuTextures,unsigned backBuffers){
     forceCpuTextures=cpuTextures;configuredBackBuffers=backBuffers<1?1u:backBuffers>3?3u:backBuffers;
 }
+void setD3D9Hud(unsigned mode){
+    // Set before DXVK creates a device; HUD is rendered in its Vulkan command buffer.
+    setenv("DXVK_HUD",mode==1?"velocity":mode==2?"velocity,detail=1,pipelines,compiler,memory":"0",1);
+}
+void setD3D9ShaderCache(const std::string& directory){shaderCacheDirectory=directory;}
 void configureD3D9Bridge(void* base,uint32_t (*allocator)(uint32_t),void (*deallocator)(uint32_t)){
     guestBase=base;allocateGuest=allocator;freeGuest=deallocator;
 #ifdef __ANDROID__
     // Shader caches are optional; the Android process has no writable cwd.
-    setenv("DXVK_STATE_CACHE","0",1);
+    setenv("DXVK_STATE_CACHE",shaderCacheDirectory.empty()?"0":"1",1);
+    setenv("NFS_VELOCITY_PIPELINE_CACHE_PATH",shaderCacheDirectory.c_str(),1);
+    if(!shaderCacheDirectory.empty())setenv("DXVK_STATE_CACHE_PATH",shaderCacheDirectory.c_str(),1);
     setenv("DXVK_LOG_PATH","none",1);
 #endif
 #ifndef __ANDROID__
@@ -139,7 +152,7 @@ void configureD3D9Bridge(void* base,uint32_t (*allocator)(uint32_t),void (*deall
 #endif
 }
 void shutdownD3D9Bridge(){
-    for(auto& lock:resourceLocks)freeGuest(lock.second.guest);resourceLocks.clear();
+    for(auto& lock:resourceLocks)freeGuest(lock.second.guest);resourceLocks.clear();clearLockScratch();
     for(uint32_t kind=15;kind;--kind)for(auto it=objects.begin();it!=objects.end();){
         if(static_cast<uint32_t>(it->second.kind)!=kind){++it;continue;}
         auto object=it->second;for(uint32_t n=0;n<object.references;++n)object.native->Release();
@@ -155,11 +168,24 @@ bool d3d9RequestsSurface(){return surfaceRequested;}
 void acknowledgeD3D9Surface(bool available){surfaceAvailable=available;}
 uint32_t createGuestD3D9(uint32_t sdk){
     auto native=Direct3DCreate9(sdk);
+    velocity::metadata("backend=DXVK Native 1.9.2b; revision=c8dc91fabd00cac11d697ccf07426e798393cd40; velocity=5");
+    if(native)if(const char* path=std::getenv("NFS_VELOCITY_BACKEND_REPORT")){
+        if(FILE* report=std::fopen(path,"w")){std::fputs("Velocity.5 / DXVK Native 1.9.2b / c8dc91fabd00cac11d697ccf07426e798393cd40\n",report);std::fclose(report);}
+    }
     NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","DXVK native Direct3DCreate9 sdk=%u",sdk);
     return wrap(native,Kind::D3D9);
 }
 uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumentCount){
     uint32_t kind=(token-methodBase)/4096,method=((token-methodBase)%4096)/16;
+    velocity::D3D9Call operation(kind,method);
+    const bool isPresent=(kind==2&&method==17)||(kind==13&&method==3);
+#if NFS_VELOCITY_PROFILING
+    static uint64_t sampleSequence=0; // Calls are serialized by the guest machine.
+    const bool sample=velocity::enabled()&&(isPresent||(++sampleSequence&63u)==0);
+    velocity::Scope profile(isPresent?velocity::Metric::Present:velocity::Metric::D3D9Sample,
+        isPresent?1:64,sample);
+    if(kind==2&&method>=81&&method<=84)velocity::draw();
+#endif
     auto found=objects.find(args[0]);
     if(found==objects.end()||static_cast<uint32_t>(found->second.kind)!=kind){
         NFS_RUNTIME_LOG(ANDROID_LOG_ERROR,"NFSU2","Invalid D3D9 COM call object=%08x token=%08x kind=%u method=%u actualKind=%u",args[0],token,kind,method,
@@ -170,13 +196,17 @@ uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumen
     // Android may replace ANativeWindow after backgrounding, even at the same
     // pointer address. Override the destination with this surface generation so
     // DXVK recreates its presenter while keeping the game's device/resources.
-    if((kind==2&&method==17)||(kind==13&&method==3)){
+    if(isPresent){
         *argumentCount=kind==2?5:6;auto window=dxvkAndroidGetWindowHandle();
         if(!window)return D3DERR_DEVICELOST;
         auto source=static_cast<const RECT*>(pointer(args[1])),destination=static_cast<const RECT*>(pointer(args[2]));
         auto dirty=static_cast<const RGNDATA*>(pointer(args[4]));
-        return kind==2?static_cast<IDirect3DDevice9*>(object)->Present(source,destination,window,dirty):
+        HRESULT result=kind==2?static_cast<IDirect3DDevice9*>(object)->Present(source,destination,window,dirty):
             static_cast<IDirect3DSwapChain9*>(object)->Present(source,destination,window,dirty,args[5]);
+#ifdef __ANDROID__
+        if(dxvkAndroidHasPipelineFailure())throw std::runtime_error("DXVK pipeline compilation failed after retry; restart with synchronous shaders or a compatible driver");
+#endif
+        return result;
     }
     // Log the first calls of each method; tokens span 0x7e000000..0x7e00ffff.
     static uint8_t methodCalls[4096];auto& calls=methodCalls[((token-methodBase)/16)&4095];
@@ -195,7 +225,8 @@ uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumen
             throw std::runtime_error("D3D9 COM Release without owned reference");
         }
         auto nativeReferences=object->Release();uint32_t references=--found->second.references;
-        if(kind==5)NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","Surface Release object=%08x guestRefs=%u nativeRefs=%u",args[0],references,uint32_t(nativeReferences));
+        static unsigned surfaceReleaseLogs=0;
+        if(kind==5&&surfaceReleaseLogs<8&&++surfaceReleaseLogs)NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","Surface Release object=%08x guestRefs=%u nativeRefs=%u",args[0],references,uint32_t(nativeReferences));
         if(!references){
             if(found->second.children)return uint32_t(nativeReferences);
             auto parent=found->second.parent;retireGuestObject(args[0]);
@@ -242,7 +273,7 @@ uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumen
             // here with the reason instead.
             static unsigned failures=0;failures=FAILED(status)?failures+1:0;
             if(FAILED(status)&&failures<2)return status;
-            if(FAILED(status))throw std::runtime_error("La GPU no pudo crear el dispositivo grafico (Vulkan, CreateDevice "+
+            if(FAILED(status))throw std::runtime_error("GPU device creation failed (Vulkan, CreateDevice "+
                 std::to_string(uint32_t(status))+"). Usa \"Probar driver\" en el launcher para ver que le falta.");
             write(args[6],wrap(device,Kind::Device));return status;
         }
@@ -261,14 +292,14 @@ uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumen
             auto original=static_cast<D3DFORMAT>(args[5]),format=nativeTextureFormat(device,original,args[4],D3DRTYPE_TEXTURE);IDirect3DTexture9* texture=nullptr;
             HRESULT status=device->CreateTexture(args[1],args[2],args[3],args[4],format,static_cast<D3DPOOL>(args[6]),&texture,nullptr);
             uint32_t address=SUCCEEDED(status)?wrap(texture,Kind::Texture):0;
-            if(address&&format!=original){objects.at(address).compressed.texture=std::make_shared<CompressedTexture>(original,args[1],args[2],texture->GetLevelCount(),1);NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","CPU DXT fallback texture %ux%u format=%u",args[1],args[2],original);}
+            if(address&&format!=original){objects.at(address).compressed.texture=std::make_shared<CompressedTexture>(original,args[1],args[2],texture->GetLevelCount(),1);velocity::count(velocity::Counter::TextureFallbacks);static unsigned fallbackLogs=0;if(fallbackLogs<8&&++fallbackLogs)NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","CPU DXT fallback texture %ux%u format=%u",args[1],args[2],original);}
             write(args[7],address);return status;}
         case 25:{*argumentCount=8;if(args[7])throw std::runtime_error("Shared cube handle pending");if(!args[6])return D3DERR_INVALIDCALL;
             auto original=static_cast<D3DFORMAT>(args[4]),format=nativeTextureFormat(device,original,args[3],D3DRTYPE_CUBETEXTURE);IDirect3DCubeTexture9* texture=nullptr;
             HRESULT status=device->CreateCubeTexture(args[1],args[2],args[3],format,static_cast<D3DPOOL>(args[5]),&texture,nullptr);
             NFS_RUNTIME_LOG(ANDROID_LOG_INFO,"NFSU2","D3D9 CreateCubeTexture edge=%u levels=%u usage=%08x format=%u nativeFormat=%u pool=%u status=%08x output=%08x",args[1],args[2],args[3],unsigned(original),unsigned(format),args[5],uint32_t(status),args[6]);
             uint32_t address=SUCCEEDED(status)?wrap(texture,Kind::Cube):0;
-            if(address&&format!=original)objects.at(address).compressed.texture=std::make_shared<CompressedTexture>(original,args[1],args[1],texture->GetLevelCount(),6);
+            if(address&&format!=original){objects.at(address).compressed.texture=std::make_shared<CompressedTexture>(original,args[1],args[1],texture->GetLevelCount(),6);velocity::count(velocity::Counter::TextureFallbacks);}
             write(args[6],address);return status;}
 #include "d3d9_device_methods.inc"
     }}

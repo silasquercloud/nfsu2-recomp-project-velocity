@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" formatted="false">"NFSU2 Recompiled — Project Velocity ARM64"</string>
+    <string name="crash_title" formatted="false">"O jogo foi fechado"</string>
+    <string name="crash_prompt" formatted="false">".\n\nDeseja relatar esta falha no GitHub para ajudar a corrigi-la?"</string>
+    <string name="report_github" formatted="false">"Relatar no GitHub"</string>
+    <string name="not_now" formatted="false">"Agora não"</string>
+    <string name="native_subtitle" formatted="false">"PC · recompilado nativamente para Android"</string>
+    <string name="game_files" formatted="false">"ARQUIVOS DO JOGO"</string>
+    <string name="play" formatted="false">"JOGAR"</string>
+    <string name="storage_access" formatted="false">"Permitir acesso ao armazenamento interno/nfsu2"</string>
+    <string name="options" formatted="false">"OPÇÕES"</string>
+    <string name="options_apply" formatted="false">"Aplicadas ao tocar em JOGAR."</string>
+    <string name="game_folders" formatted="false">"Pastas do jogo"</string>
+    <string name="missing_folders" formatted="false">"Pastas ausentes: "</string>
+    <string name="widescreen_data" formatted="false">"HUD panorâmico (scripts/…WidescreenFix.dat)"</string>
+    <string name="allow_storage" formatted="false">"Permita o acesso aos arquivos para ler armazenamento interno/nfsu2."</string>
+    <string name="storage_path" formatted="false">"Armazenamento interno/nfsu2"</string>
+    <string name="copy_game" formatted="false">"Copie os arquivos do seu jogo para armazenamento interno/nfsu2."</string>
+    <string name="vulkan_driver" formatted="false">"Driver Vulkan"</string>
+    <string name="system_driver_short" formatted="false">"Do sistema"</string>
+    <string name="probe_driver" formatted="false">"Testar driver"</string>
+    <string name="probe_capabilities" formatted="false">"GPU e recursos Vulkan"</string>
+    <string name="game_language" formatted="false">"Idioma do jogo"</string>
+    <string name="velocity_section" formatted="false">"Project Velocity — Desempenho"</string>
+    <string name="velocity_version" formatted="false">"Experimental 0.14.0-velocity.2"</string>
+    <string name="velocity_help" formatted="false">"A coleta de desempenho vem desativada. Após jogar, volte ao launcher para salvar os últimos 600 quadros. Tempos Vulkan medem chamadas na CPU, não a execução na GPU."</string>
+    <string name="export_performance" formatted="false">"Exportar relatório de desempenho"</string>
+    <string name="export_hint" formatted="false">"CSV da última sessão · volte do jogo primeiro"</string>
+    <string name="online_server" formatted="false">"Servidor online"</string>
+    <string name="check_updates" formatted="false">"Buscar atualizações"</string>
+    <string name="checking_github" formatted="false">"Consultando o GitHub…"</string>
+    <string name="version_prefix" formatted="false">"Versão "</string>
+    <string name="report_problem" formatted="false">"Relatar um problema"</string>
+    <string name="full_log" formatted="false">"Registro completo para o GitHub"</string>
+    <string name="no_frames" formatted="false">"Nenhum quadro registrado. Ative a coleta de desempenho, jogue e volte ao launcher. Aguarde a gravação do relatório antes de exportar."</string>
+    <string name="no_game_languages" formatted="false">"Nenhum idioma do jogo encontrado em armazenamento interno/nfsu2/LANGUAGES."</string>
+    <string name="cancel" formatted="false">"Cancelar"</string>
+    <string name="online_help" formatted="false">"O modo online (EA Nation) se conecta a este servidor da comunidade em vez dos servidores desativados da EA."</string>
+    <string name="save" formatted="false">"Salvar"</string>
+    <string name="restore" formatted="false">"Restaurar"</string>
+    <string name="invalid_server_suffix" formatted="false">"\\" não é um nome de servidor válido."</string>
+    <string name="system_driver" formatted="false">"Driver do sistema"</string>
+    <string name="import_zip" formatted="false">"Importar ZIP"</string>
+    <string name="remove_driver" formatted="false">"Remover driver selecionado"</string>
+    <string name="back" formatted="false">"Voltar"</string>
+    <string name="driver_failure_prefix" formatted="false">"Não foi possível usar o driver: "</string>
+    <string name="vulkan_start_error" formatted="false">"erro ao iniciar o Vulkan."</string>
+    <string name="bc_label" formatted="false">"\nTexturas BC: "</string>
+    <string name="bc_gpu" formatted="false">"na GPU"</string>
+    <string name="bc_cpu" formatted="false">"convertidas na CPU"</string>
+    <string name="compatible" formatted="false">"Compatível com o jogo."</string>
+    <string name="missing_features" formatted="false">"Recursos ausentes: "</string>
+    <string name="probe_title" formatted="false">"Teste do driver Vulkan"</string>
+    <string name="use_system_driver" formatted="false">"Usar driver do sistema"</string>
+    <string name="invalid_diagnostic" formatted="false">"Diagnóstico inválido: "</string>
+    <string name="destination_unavailable" formatted="false">"Destino indisponível"</string>
+    <string name="report_saved" formatted="false">"Relatório salvo."</string>
+    <string name="importing_driver" formatted="false">"Importando driver Vulkan…"</string>
+    <string name="driver_imported_prefix" formatted="false">"Driver importado: "</string>
+    <string name="driver_imported_suffix" formatted="false">". Use Testar driver para verificá-lo."</string>
+    <string name="driver_import_failure" formatted="false">"Não foi possível importar o driver: "</string>
+    <string name="updates" formatted="false">"Atualizações"</string>
+    <string name="installed_prefix" formatted="false">"Versão instalada: "</string>
+    <string name="no_update_suffix" formatted="false">". Não há uma versão mais recente no GitHub."</string>
+    <string name="new_version" formatted="false">"Nova versão disponível: "</string>
+    <string name="update_message" formatted="false">"Você pode baixar pelo GitHub ou continuar com esta versão. Atualize apenas com um APK assinado pelo mesmo desenvolvedor; faça backup dos saves antes de trocar de versão."</string>
+    <string name="update" formatted="false">"Atualizar"</string>
+    <string name="later" formatted="false">"Mais tarde"</string>
+    <string name="preparing_report" formatted="false">"Preparando o relatório…"</string>
+    <string name="report_instructions" formatted="false">"1. Salve o ZIP com o registro completo.\n2. Um relato será aberto no GitHub: descreva o ocorrido e anexe o ZIP."</string>
+    <string name="save_open_github" formatted="false">"Salvar e abrir o GitHub"</string>
+    <string name="prepare_report_error" formatted="false">"Não foi possível preparar o relatório: "</string>
+    <string name="report_unavailable" formatted="false">"O relatório não está mais disponível."</string>
+    <string name="open_destination_error" formatted="false">"Não foi possível abrir o destino."</string>
+    <string name="save_zip_error" formatted="false">"Não foi possível salvar o ZIP: "</string>
+    <string name="no_browser" formatted="false">"Não há navegador disponível para abrir "</string>
+    <string name="optional_suffix" formatted="false">" · opcional"</string>
+    <string name="ok" formatted="false">"OK"</string>
+    <string name="no_accelerometer" formatted="false">"Este dispositivo não tem acelerômetro"</string>
+    <string name="tilt_enable" formatted="false">"Virar inclinando o celular"</string>
+    <string name="tilt_invert" formatted="false">"Inverter direção"</string>
+    <string name="sensitivity_prefix" formatted="false">"Sensibilidade: "</string>
+    <string name="tilt_help" formatted="false">"Segure o celular na posição de jogo ao aplicar. A inclinação controla a direção; os pedais continuam na tela."</string>
+    <string name="tilt_title" formatted="false">"Direção por inclinação"</string>
+    <string name="tilt_apply" formatted="false">"Aplicar e calibrar"</string>
+    <string name="text_hint" formatted="false">"Nome, e-mail ou senha"</string>
+    <string name="text_replace" formatted="false">"Substituir o nome atual"</string>
+    <string name="text_title" formatted="false">"Digitar no jogo"</string>
+    <string name="text_write" formatted="false">"Digitar"</string>
+    <string name="text_validation" formatted="false">"Até 40 caracteres: letras sem acentos, números e . , - _ @ + ! # $ % &amp; * ( ) = ? / ; :"</string>
+    <string name="cache_unavailable" formatted="false">"Cache de shaders indisponível: usando o padrão"</string>
+    <string name="startup_storage" formatted="false">"Project Velocity\nVerificando armazenamento interno/nfsu2…"</string>
+    <string name="storage_permission" formatted="false">"Permita o acesso aos arquivos para ler a pasta nfsu2 no armazenamento interno"</string>
+    <string name="checking_driver" formatted="false">"Verificando o driver Vulkan…"</string>
+    <string name="controls_description" formatted="false">"Controles do jogo"</string>
+    <string name="controls_restore" formatted="false">"RESTAURAR"</string>
+    <string name="controls_save" formatted="false">"SALVAR"</string>
+    <string name="controls_cancel" formatted="false">"CANCELAR"</string>
+    <string name="controls_options" formatted="false">"Opções dos controles"</string>
+    <string name="controls_style_hint" formatted="false">"Estilo: clássico / Xbox / PlayStation"</string>
+    <string name="layout_save" formatted="false">"Salvar disposição com nome"</string>
+    <string name="layout_load_custom" formatted="false">"Carregar disposição personalizada"</string>
+    <string name="controls_style" formatted="false">"Estilo de direção"</string>
+    <string name="style_classic" formatted="false">"Clássico · setas e pedais"</string>
+    <string name="style_xbox" formatted="false">"Xbox · volante e A / B / X / Y"</string>
+    <string name="style_playstation" formatted="false">"PlayStation · volante e × / ○ / □ / △"</string>
+    <string name="layout_name" formatted="false">"Nome da disposição"</string>
+    <string name="layout_save_prefix" formatted="false">"Salvar disposição de "</string>
+    <string name="driving" formatted="false">"direção"</string>
+    <string name="menu" formatted="false">"menu"</string>
+    <string name="enter_name" formatted="false">"Digite um nome"</string>
+    <string name="layout_saved" formatted="false">"Disposição salva: "</string>
+    <string name="layout_save_error" formatted="false">"Não foi possível salvar a disposição"</string>
+    <string name="no_layouts" formatted="false">"Ainda não há disposições salvas para este modo"</string>
+    <string name="layout_load" formatted="false">"Carregar disposição"</string>
+    <string name="layout_load_error" formatted="false">"Não foi possível carregar a disposição"</string>
+    <string name="resolution" formatted="false">"Resolução interna"</string>
+    <string name="resolution_native" formatted="false">"Nativa · qualidade máxima"</string>
+    <string name="resolution_balanced" formatted="false">"75% · equilibrada"</string>
+    <string name="resolution_fast" formatted="false">"50% · desempenho máximo"</string>
+    <string name="resolution_720" formatted="false">"1280×720 · 16:9"</string>
+    <string name="fps_limit" formatted="false">"Limite de FPS"</string>
+    <string name="fps_battery" formatted="false">"30 FPS · economizar bateria"</string>
+    <string name="fps_60" formatted="false">"60 FPS"</string>
+    <string name="fps_90" formatted="false">"90 FPS"</string>
+    <string name="fps_120" formatted="false">"120 FPS"</string>
+    <string name="unlimited" formatted="false">"Sem limite"</string>
+    <string name="widescreen" formatted="false">"Tela panorâmica"</string>
+    <string name="widescreen_fixed" formatted="false">"HUD e câmera corrigidos"</string>
+    <string name="widescreen_original" formatted="false">"Original 4:3 esticado"</string>
+    <string name="minimap" formatted="false">"Minimapa"</string>
+    <string name="minimap_top" formatted="false">"Superior esquerdo"</string>
+    <string name="minimap_bottom" formatted="false">"Inferior esquerdo (original)"</string>
+    <string name="cpu_gpu_sync" formatted="false">"Sincronização CPU/GPU"</string>
+    <string name="sync_parallel" formatted="false">"Desempenho · CPU e GPU em paralelo"</string>
+    <string name="sync_latency" formatted="false">"Baixa latência · menos FPS"</string>
+    <string name="compressed_textures" formatted="false">"Texturas comprimidas"</string>
+    <string name="textures_auto" formatted="false">"Automático · GPU quando compatível"</string>
+    <string name="textures_cpu" formatted="false">"Converter na CPU · compatibilidade"</string>
+    <string name="frame_pacing" formatted="false">"Ritmo dos quadros"</string>
+    <string name="pacing_default" formatted="false">"Padrão"</string>
+    <string name="pacing_experimental" formatted="false">"Experimental · sem rajadas após atrasos"</string>
+    <string name="profiling" formatted="false">"Coleta de desempenho"</string>
+    <string name="profiling_off" formatted="false">"Desativada"</string>
+    <string name="profiling_on" formatted="false">"Ativada · CSV + rastreamento Android"</string>
+    <string name="shader_cache" formatted="false">"Cache de shaders"</string>
+    <string name="cache_off" formatted="false">"Desativado"</string>
+    <string name="cache_on" formatted="false">"Cache de estados DXVK · persistente"</string>
+    <string name="github_connection" formatted="false">"Não foi possível consultar o GitHub. Verifique a conexão e tente novamente mais tarde."</string>
+    <string name="github_unavailable" formatted="false">"GitHub indisponível"</string>
+    <string name="response_too_large" formatted="false">"Resposta muito grande"</string>
+    <string name="crash_anr" formatted="false">"O jogo parou de responder"</string>
+    <string name="crash_unexpected" formatted="false">"O jogo foi fechado inesperadamente"</string>
+    <string name="phone_label" formatted="false">"\nCelular: "</string>
+    <string name="report_create_error" formatted="false">"Não foi possível criar o relatório."</string>
+    <string name="date_label" formatted="false">"Data: "</string>
+    <string name="report_what" formatted="false">"### O que aconteceu\n"</string>
+    <string name="report_steps" formatted="false">"\n### Como reproduzir\n\n"</string>
+    <string name="report_device" formatted="false">"### Dispositivo\n"</string>
+    <string name="report_attach_prefix" formatted="false">"\n### Registro completo\nAnexe o arquivo **"</string>
+    <string name="report_attach_suffix" formatted="false">"** que você acabou de salvar.\n"</string>
+    <string name="report_tail" formatted="false">"\n### Últimas linhas do registro\n```\n"</string>
+    <string name="unexpected_exit" formatted="false">"fechamento inesperado"</string>
+    <string name="trace_unavailable" formatted="false">"Rastreamento indisponível: "</string>
+    <string name="ui_language" formatted="false">"Idioma do launcher"</string>
+    <string name="locale_system" formatted="false">Automático</string>
+    <string name="locale_portuguese" formatted="false">"Português (Brasil)"</string>
+    <string name="locale_english" formatted="false">"English"</string>
+    <string name="locale_help" formatted="false">"Altera apenas o launcher. Os arquivos de idioma do jogo permanecem intactos."</string>
+    <string name="boot_pending" formatted="false">"Aguardando a inicialização do jogo"</string>
+    <string name="boot_running" formatted="false">"Iniciando o jogo…"</string>
+    <string name="boot_finished" formatted="false">"O jogo terminou: "</string>
+    <string name="boot_stopped" formatted="false">"Inicialização do jogo interrompida: "</string>
+    <string name="exe_read_error" formatted="false">"Não foi possível ler SPEED2.EXE. Verifique os arquivos do jogo e a permissão de armazenamento."</string>
+    <string name="exe_mismatch" formatted="false">"SPEED2.EXE tem tamanho ou cabeçalho incompatível."</string>
+    <string name="directory_read_error" formatted="false">"Não foi possível ler a pasta do jogo: "</string>
+    <string name="directory_empty" formatted="false">"Pasta do jogo vazia: "</string>
+    <string name="probe_cancelled" formatted="false">"O teste do driver foi cancelado ou fechado."</string>
+    <string name="probe_timeout" formatted="false">"O teste do driver ultrapassou 20 segundos."</string>
+    <string name="probe_failed" formatted="false">"Não foi possível executar o teste do driver."</string>
+    <string name="driver_open" formatted="false">"Não foi possível abrir o driver selecionado."</string>
+    <string name="driver_entry" formatted="false">"O driver não oferece vkGetInstanceProcAddr."</string>
+    <string name="driver_instance" formatted="false">"O driver não oferece vkCreateInstance."</string>
+    <string name="driver_functions" formatted="false">"O driver tem funções Vulkan incompletas."</string>
+    <string name="no_vulkan_gpu" formatted="false">"Nenhuma GPU Vulkan foi encontrada."</string>
+    <string name="zip_count" formatted="false">"O ZIP contém arquivos demais."</string>
+    <string name="zip_paths" formatted="false">"O ZIP contém caminhos inválidos ou repetidos."</string>
+    <string name="mkdir_error" formatted="false">"Não foi possível criar a pasta."</string>
+    <string name="driver_size" formatted="false">"O pacote de driver é muito grande."</string>
+    <string name="driver_abi" formatted="false">"O driver precisa ser uma biblioteca Android ARM64 (.so)."</string>
+    <string name="driver_link" formatted="false">"Link inesperado no pacote."</string>
+    <string name="delete_error" formatted="false">"Não foi possível excluir "</string>
+    <string name="driver_mkdir" formatted="false">"Não foi possível criar a pasta do driver."</string>
+    <string name="zip_open" formatted="false">"Não foi possível abrir o ZIP."</string>
+    <string name="driver_meta" formatted="false">"O ZIP do driver não contém meta.json."</string>
+    <string name="driver_library" formatted="false">"libraryName inválido."</string>
+    <string name="driver_android" formatted="false">"Este driver exige uma versão mais recente do Android."</string>
+    <string name="driver_name" formatted="false">"Nome de driver inválido."</string>
+    <string name="driver_install" formatted="false">"Não foi possível instalar o driver."</string>
+    <string name="package_install" formatted="false">"Não foi possível instalar o pacote."</string>
+    <string name="driver_ambiguous" formatted="false">"Há vários meta.json: o pacote é ambíguo."</string>
+    <string name="driver_protect" formatted="false">"Não foi possível proteger a biblioteca do driver."</string>
+    <string name="driver_path" formatted="false">"Caminho de driver inválido."</string>
+    <string name="runtime_call_missing" formatted="false">"Chamada do runtime ainda não implementada: "</string>
+    <string name="network_unimplemented" formatted="false">"Operação de rede ainda não implementada: "</string>
+    <string name="custom_driver_failed" formatted="false">"Não foi possível carregar o driver Vulkan selecionado. Escolha o driver do sistema no launcher. Biblioteca: "</string>
+    <string name="velocity4_clear_shader_cache_title">Limpar cache de shaders?</string>
+    <string name="velocity4_clear_shader_cache_body">Limpa os caches de estados e pipelines DXVK na próxima inicialização do jogo. A próxima execução pode apresentar travamentos enquanto os pipelines são recompilados.</string>
+    <string name="velocity4_dxvk_manager_title">Gerenciador DXVK</string>
+    <string name="velocity4_dxvk_manager_body">Atual: DXVK Native 1.9.2b com alterações Velocity, integrado ao runtime nativo. Os downloads são APKs completos e assinados do port. O Android confirma a instalação; DLLs DXVK independentes são incompatíveis.\n\nAutomático mantém o pacote instalado: não há alternativa mais rápida comprovada neste dispositivo. Estável: nenhuma compilação validada em hardware listada. Legado e Experimental contêm somente pacotes publicados.</string>
+    <string name="velocity4_dxvk_packages_title">Pacotes correspondentes de DXVK e runtime</string>
+    <string name="velocity4_dxvk_package_verify_body">Baixe e verifique o pacote completo. Bibliotecas nativas, dependências, SHA-256, identidade do pacote e certificado são verificados antes de abrir o instalador.\n\n</string>
+    <string name="velocity4_dxvk_download_title">Baixar e verificar pacote</string>
+    <string name="velocity4_dxvk_verified_title">Pacote verificado</string>
+    <string name="velocity4_dxvk_verified_body">O SHA-256, as bibliotecas ARM64 e a assinatura conferem. O Android confirmará a instalação.</string>
+    <string name="v5_universal_compatibility_one_auto_worker">Compatibilidade universal · um worker automático</string>
+    <string name="v5_balanced_conservative_auto_workers">Equilibrado · workers automáticos conservadores</string>
+    <string name="v5_performance_parallel_presentation">Desempenho · apresentação paralela</string>
+    <string name="v5_experimental_up_to_four_auto_workers">Experimental · até quatro workers automáticos</string>
+    <string name="v5_graphics_profile">Perfil gráfico</string>
+    <string name="v5_auto_conservative_worker_budget">Automático · limite conservador de workers</string>
+    <string name="v5_on_required_pipelines_prioritized">Ativada · prioridade para pipelines necessários</string>
+    <string name="v5_off_synchronous_fallback">Desativada · compilação síncrona</string>
+    <string name="v5_async_shader_compilation">Compilação assíncrona de shaders</string>
+    <string name="v5_auto">Automático</string>
+    <string name="v5_1">1</string>
+    <string name="v5_2">2</string>
+    <string name="v5_3">3</string>
+    <string name="v5_4">4</string>
+    <string name="v5_shader_workers">Workers de shaders</string>
+    <string name="v5_on_known_states_as_shaders_load">Ativado · estados conhecidos ao carregar shaders</string>
+    <string name="v5_off">Desativado</string>
+    <string name="v5_pipeline_prewarming">Pré-aquecimento de pipelines</string>
+    <string name="v5_off_19">Desativado</string>
+    <string name="v5_compact_fps_gpu_vulkan">Compacto · FPS / GPU / Vulkan</string>
+    <string name="v5_detailed_timings_pipelines_memory">Detalhado · tempos / pipelines / memória</string>
+    <string name="v5_performance_hud">Indicadores de desempenho (HUD)</string>
+    <string name="v5_automatic_both_landscape_directions">Automática · os dois sentidos horizontais</string>
+    <string name="v5_landscape">Horizontal normal</string>
+    <string name="v5_reverse_landscape">Horizontal invertida</string>
+    <string name="v5_screen_orientation">Orientação da tela</string>
+    <string name="v5_published_packages">Pacotes publicados</string>
+    <string name="v5_delete_downloads">Excluir downloads</string>
+    <string name="v5_recovery">Recuperação</string>
+    <string name="v5_recovery_selected">Recuperação selecionada</string>
+    <string name="v5_the_next_game_launch_uses_the_bundled_dxvk_with_synchronous_compilation_and">A próxima execução usará o DXVK incluído, compilação síncrona e configurações conservadoras. O Android não permite voltar silenciosamente a uma versão anterior; instalações canceladas ou malsucedidas preservam o aplicativo anterior.</string>
+    <string name="v5_download_running">Download em andamento</string>
+    <string name="v5_cancel_or_finish_the_download_first">Cancele ou conclua o download primeiro.</string>
+    <string name="v5_downloads_deleted">Downloads excluídos</string>
+    <string name="v5_loading_verified_package_catalog">Carregando catálogo de pacotes verificados…</string>
+    <string name="v5_catalog_unavailable">Catálogo indisponível</string>
+    <string name="v5_older_version_download_only_android_does_not_permit_normal_downgrade_instal">Versão anterior: apenas download. O Android não permite instalar normalmente uma versão anterior.</string>
+    <string name="v5_installation_takes_effect_after_android_restarts_the_application_save_and_e">A instalação terá efeito após o Android reiniciar o aplicativo. Salve e feche o jogo antes de instalar.</string>
+    <string name="v5_download">Baixar</string>
+    <string name="v5_one_package_at_a_time">Baixe um pacote por vez.</string>
+    <string name="v5_cancel">Cancelar</string>
+    <string name="v5_verified_legacy_download">Download da versão anterior verificado</string>
+    <string name="v5_stored_in_private_package_cache_normal_android_installation_cannot_downgrad">Salvo no cache privado de pacotes. A instalação normal do Android não permite voltar a esta versão.</string>
+    <string name="v5_install">Instalar</string>
+    <string name="v5_package_not_installed">Pacote não instalado</string>
+    <string name="v5_allow_installation">Permitir instalação</string>
+    <string name="v5_enable_installation_for_project_velocity_in_the_next_android_screen_then_se">Permita a instalação pelo Project Velocity na próxima tela do Android e selecione novamente o pacote baixado.</string>
+    <string name="v5_installer_unavailable">Instalador indisponível</string>
+    <string name="v5_graphics_dxvk_manager">Gráficos · Gerenciador DXVK</string>
+    <string name="v5_verified_matched_runtime_packages">Pacotes completos compatíveis e verificados</string>
+    <string name="v5_pipeline_cache">Cache de pipelines</string>
+    <string name="v5_clear_on_next_game_launch">Limpar na próxima execução do jogo</string>
+    <string name="v5_clear">Limpar</string>
+    <string name="v5_cache">Cache</string>
+    <string name="v5_shader_compilation_statistics">Estatísticas de compilação de shaders</string>
+    <string name="v5_export_csv_compile_rate_waits_cache_lookups">Exportar CSV · compilações / esperas / consultas ao cache</string>
+    <string name="v5_some_pipeline_caches_could_not_be_removed">Não foi possível remover alguns caches de pipelines</string>
+    <string name="v5_previous_game_session_ended_unexpectedly_using_synchronous_shader_recovery_">A sessão anterior terminou inesperadamente: esta execução usará a recuperação com shaders síncronos</string>
+    <string name="v5_experimental_version">Experimental %1$s</string>
+    <string name="v5_unexpected_catalog_origin">Origem inesperada do catálogo</string>
+    <string name="v5_untrusted_download_redirect">Redirecionamento de download não confiável</string>
+    <string name="v5_missing_redirect">Redirecionamento ausente</string>
+    <string name="v5_too_many_redirects">Redirecionamentos em excesso</string>
+    <string name="v5_catalog_too_large">Catálogo muito grande</string>
+    <string name="v5_unsupported_catalog">Catálogo não suportado</string>
+    <string name="v5_incompatible_package_identity">Identidade do pacote incompatível</string>
+    <string name="v5_unknown_package_source">Origem do pacote desconhecida</string>
+    <string name="v5_invalid_package_size_hash">Tamanho ou hash do pacote inválido</string>
+    <string name="v5_unknown_category">Categoria desconhecida</string>
+    <string name="v5_package_hash_size_mismatch">O hash ou tamanho do pacote não corresponde ao catálogo</string>
+    <string name="v5_package_manifest_mismatch">O manifesto do pacote não corresponde ao catálogo</string>
+    <string name="v5_signing_certificate_unavailable">Certificado de assinatura indisponível</string>
+    <string name="v5_signing_certificate_does_not_match_installed_velocity">O certificado não corresponde ao Velocity instalado</string>
+    <string name="v5_cancelled">Cancelado</string>
+    <string name="v5_download_timed_out">Tempo limite do download excedido</string>
+    <string name="v5_package_exceeds_declared_size">O pacote excede o tamanho declarado</string>
+    <string name="v5_cannot_atomically_install_download">Não foi possível concluir a gravação do download</string>
+    <string name="v5_backend_status">Incluído: DXVK Native 1.9.2b + Velocity.5.\nÚltima inicialização confirmada: %1$s\n\nDXVK 1.10.3: indisponível. Suas APIs Windows de apresentação e monitores ainda não foram adaptadas e validadas no Android. Não há troca isolada de backend.</string>
+    <string name="v5_backend_not_started">Não registrada para esta compilação</string>
+    <string name="v5_category_current">Atual</string>
+    <string name="v5_category_stable">Estável</string>
+    <string name="v5_category_legacy">Legado</string>
+    <string name="v5_category_experimental">Experimental</string>
+    <string name="v5_validation_automated">Verificações automatizadas; validação em aparelho pendente</string>
+    <string name="v5_generic_failure">A operação falhou. Detalhes técnicos: %1$s</string>
+    <string name="v5_pipeline_failure">A compilação de pipeline falhou após nova tentativa. Reinicie com shaders síncronos ou um driver compatível.</string>
+    <string name="v5_missing_dependency">Dependência nativa indisponível: %1$s</string>
+    <string name="v5_auto_locale">Automático</string>
+    <string name="v5_elf_error_0">Intervalo ELF fora da biblioteca</string>
+    <string name="v5_elf_error_1">ELF truncado</string>
+    <string name="v5_elf_error_2">A biblioteca não é ELF64 ARM64</string>
+    <string name="v5_elf_error_3">Tabela de programa ELF não suportada</string>
+    <string name="v5_elf_error_4">Segmento ELF inválido</string>
+    <string name="v5_elf_error_5">Tabela dinâmica ELF ausente</string>
+    <string name="v5_elf_error_6">Tabela de textos ELF inválida</string>
+    <string name="v5_elf_error_7">Textos ELF sem mapeamento</string>
+    <string name="v5_elf_error_8">Dependência ELF inválida</string>
+    <string name="v5_elf_error_9">Nome de dependência ELF inválido</string>
+    <string name="v5_elf_error_10">Entrada duplicada no APK</string>
+    <string name="v5_elf_error_11">Entrada inválida no APK</string>
+    <string name="v5_elf_error_12">ABI ou caminho inesperado</string>
+    <string name="v5_elf_error_13">Pacote do port incompleto</string>
+</resources>

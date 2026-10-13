@@ -2,6 +2,7 @@
 // android_diagnostico.cpp; the checks are what this port's DXVK d3d9 device enables unconditionally
 // (D3D9DeviceEx::GetDeviceFeatures), so "compatible" means the game's device can be created.
 #include "vulkan_driver.h"
+#include "vulkan_compat.h"
 #include <jni.h>
 #include <dlfcn.h>
 #include <sstream>
@@ -21,11 +22,11 @@ std::string json(const std::string& value) {
 std::string probe(const char* hooks, const char* temp, const char* directory, const char* library) {
     struct Loader { void* handle; ~Loader() { if (handle) dlclose(handle); } }
         loader{nfsOpenVulkan(hooks, temp, directory, library)};
-    if (!loader.handle) return "{\"driverLoadFailed\":true,\"probeError\":\"No se pudo abrir el driver seleccionado\"}";
+    if (!loader.handle) return "{\"driverLoadFailed\":true,\"probeError\":\"driver_open\"}";
     auto getProc = nfsVulkanEntry(loader.handle);
-    if (!getProc) return "{\"driverLoadFailed\":true,\"probeError\":\"El paquete no ofrece vkGetInstanceProcAddr\"}";
+    if (!getProc) return "{\"driverLoadFailed\":true,\"probeError\":\"driver_entry\"}";
     auto createInstance = reinterpret_cast<PFN_vkCreateInstance>(getProc(nullptr, "vkCreateInstance"));
-    if (!createInstance) return "{\"driverLoadFailed\":true,\"probeError\":\"El paquete no ofrece vkCreateInstance\"}";
+    if (!createInstance) return "{\"driverLoadFailed\":true,\"probeError\":\"driver_instance\"}";
     uint32_t loaderVersion = VK_API_VERSION_1_0;
     if (auto version = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(getProc(nullptr, "vkEnumerateInstanceVersion")))
         version(&loaderVersion);
@@ -39,10 +40,11 @@ std::string probe(const char* hooks, const char* temp, const char* directory, co
     if (result != VK_SUCCESS)
         return "{\"driverLoadFailed\":true,\"probeError\":\"vkCreateInstance: " + std::to_string(result) + "\"}";
 #define LOAD(name) auto name = reinterpret_cast<PFN_##name>(getProc(instance, #name)); \
-    if (!name) return "{\"driverLoadFailed\":true,\"probeError\":\"Driver con funciones Vulkan incompletas\"}"
+    if (!name) return "{\"driverLoadFailed\":true,\"probeError\":\"driver_functions\"}"
     LOAD(vkDestroyInstance);
     LOAD(vkEnumeratePhysicalDevices);
     LOAD(vkGetPhysicalDeviceProperties);
+    LOAD(vkGetPhysicalDeviceMemoryProperties);
     LOAD(vkGetPhysicalDeviceFeatures);
     LOAD(vkGetPhysicalDeviceFormatProperties);
     LOAD(vkGetPhysicalDeviceQueueFamilyProperties);
@@ -52,7 +54,7 @@ std::string probe(const char* hooks, const char* temp, const char* directory, co
     uint32_t count = 0;
     if (vkEnumeratePhysicalDevices(instance, &count, nullptr) != VK_SUCCESS || !count) {
         vkDestroyInstance(instance, nullptr);
-        return "{\"driverLoadFailed\":true,\"probeError\":\"No se encontró una GPU Vulkan\"}";
+        return "{\"driverLoadFailed\":true,\"probeError\":\"no_vulkan_gpu\"}";
     }
     std::vector<VkPhysicalDevice> devices(count);
     vkEnumeratePhysicalDevices(instance, &count, devices.data());
@@ -105,6 +107,8 @@ std::string probe(const char* hooks, const char* temp, const char* directory, co
         }
     }
 
+    const auto requested=nfsProbeDeviceFeatures(features);
+
     // Capabilities alone do not prove an imported driver can create a device.
     VkResult deviceResult = VK_ERROR_INITIALIZATION_FAILED;
     uint32_t familyCount = 0;
@@ -118,6 +122,7 @@ std::string probe(const char* hooks, const char* temp, const char* directory, co
         queue.queueFamilyIndex = family; queue.queueCount = 1; queue.pQueuePriorities = &priority;
         const char* swapchain = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
         VkDeviceCreateInfo info{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+        info.pEnabledFeatures = &requested;
         info.queueCreateInfoCount = 1; info.pQueueCreateInfos = &queue;
         info.enabledExtensionCount = hasExtension(swapchain) ? 1 : 0; info.ppEnabledExtensionNames = &swapchain;
         VkDevice device{};
@@ -141,6 +146,32 @@ std::string probe(const char* hooks, const char* temp, const char* directory, co
         << ",\"bcTextures\":" << (bc ? "true" : "false")
         << ",\"compatible\":" << (missing.empty() ? "true" : "false") << ",\"missing\":[";
     for (size_t i = 0; i < missing.size(); ++i) out << (i ? "," : "") << json(missing[i]);
+    out << "],\"deviceId\":" << props.deviceID << ",\"driverVersion\":" << props.driverVersion;
+    out << ",\"limits\":{\"maxImageDimension2D\":" << props.limits.maxImageDimension2D
+        << ",\"maxBoundDescriptorSets\":" << props.limits.maxBoundDescriptorSets
+        << ",\"maxPerStageDescriptorSamplers\":" << props.limits.maxPerStageDescriptorSamplers
+        << ",\"maxUniformBufferRange\":" << props.limits.maxUniformBufferRange
+        << ",\"maxMemoryAllocationCount\":" << props.limits.maxMemoryAllocationCount << "}";
+    out << ",\"features\":{\"multiViewport\":" << (features.multiViewport?"true":"false")
+        << ",\"clipDistance\":" << (features.shaderClipDistance?"true":"false")
+        << ",\"geometryShader\":" << (features.geometryShader?"true":"false")
+        << ",\"sampleRateShading\":" << (features.sampleRateShading?"true":"false") << "}";
+    VkPhysicalDeviceMemoryProperties memory{};vkGetPhysicalDeviceMemoryProperties(gpu,&memory);
+    uint64_t deviceHeap=0;for(uint32_t i=0;i<memory.memoryHeapCount;++i)if(memory.memoryHeaps[i].flags&VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)deviceHeap+=memory.memoryHeaps[i].size;
+    out << ",\"deviceLocalHeapBytes\":" << deviceHeap << ",\"timestampPeriodNs\":" << props.limits.timestampPeriod;
+    out << ",\"timestampValidBits\":[";for(size_t i=0;i<families.size();++i)out << (i?",":"") << families[i].timestampValidBits;
+    out << "],\"pipelineCapabilities\":{\"graphicsPipelineLibraryAdvertised\":" << (hasExtension("VK_EXT_graphics_pipeline_library")?"true":"false")
+        << ",\"cacheControlAdvertised\":" << (hasExtension("VK_EXT_pipeline_creation_cache_control")?"true":"false")
+        << ",\"pipelineBinaryAdvertised\":" << (hasExtension("VK_KHR_pipeline_binary")?"true":"false")
+        << ",\"advancedBackendPathsImplemented\":false}";
+    out << ",\"extensions\":[";
+    for(size_t i=0;i<extensions.size();++i)out << (i?",":"") << json(extensions[i]);
+    out << "],\"formats\":[";
+    unsigned formatIndex=0;
+    for(VkFormat format:{VK_FORMAT_BC1_RGBA_UNORM_BLOCK,VK_FORMAT_BC2_UNORM_BLOCK,VK_FORMAT_BC3_UNORM_BLOCK,VK_FORMAT_R8G8B8A8_UNORM,VK_FORMAT_D24_UNORM_S8_UINT,VK_FORMAT_D32_SFLOAT}){
+        VkFormatProperties fp{};vkGetPhysicalDeviceFormatProperties(gpu,format,&fp);
+        out << (formatIndex++?",":"") << "{\"format\":" << int(format) << ",\"optimalFeatures\":" << fp.optimalTilingFeatures << "}";
+    }
     out << "]}";
     vkDestroyInstance(instance, nullptr);
     return out.str();

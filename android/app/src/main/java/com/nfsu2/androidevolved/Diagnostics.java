@@ -46,7 +46,7 @@ final class Diagnostics {
                 int reason = exit.getReason();
                 if (reason == ApplicationExitInfo.REASON_CRASH || reason == ApplicationExitInfo.REASON_CRASH_NATIVE
                         || reason == ApplicationExitInfo.REASON_ANR) {
-                    return (reason == ApplicationExitInfo.REASON_ANR ? "El juego dejó de responder" : "El juego se cerró inesperadamente")
+                    return (reason == ApplicationExitInfo.REASON_ANR ? UiText.t(context, R.string.crash_anr) : UiText.t(context, R.string.crash_unexpected))
                             + (exit.getDescription() == null ? "" : " (" + exit.getDescription() + ")");
                 }
             }
@@ -61,15 +61,31 @@ final class Diagnostics {
     static String summary(Context context) {
         GpuDrivers.Driver driver = GpuDrivers.selected(context);
         return "NFSU2 Android Evolved " + ReleaseUpdates.installed(context)
-                + "\nTeléfono: " + Build.MANUFACTURER + " " + Build.MODEL
+                + UiText.t(context, R.string.phone_label) + Build.MANUFACTURER + " " + Build.MODEL
                 + "\nAndroid: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")"
                 + "\nSoC: " + (Build.VERSION.SDK_INT >= 31 ? Build.SOC_MANUFACTURER + " " + Build.SOC_MODEL : Build.HARDWARE)
                 + "\nDriver Vulkan: " + (driver == null ? "Sistema" : driver.name) + "\n";
     }
 
+    static String performanceContext(Context context) {
+        org.json.JSONObject config=new org.json.JSONObject();
+        try {
+            config.put("version",ReleaseUpdates.installed(context));
+            config.put("phone",Build.MANUFACTURER+" "+Build.MODEL);
+            config.put("android",Build.VERSION.RELEASE);
+            config.put("sdk",Build.VERSION.SDK_INT);
+            config.put("launcher_locale",GameOptions.prefs(context).getString(UiText.PREF,"system"));
+            for(GameOptions.Option option:GameOptions.ALL)config.put(option.key,GameOptions.get(context,option.key));
+            for(GameOptions.Option option:GameOptions.VELOCITY)config.put(option.key,GameOptions.get(context,option.key));
+            GpuDrivers.Driver driver=GpuDrivers.selected(context);
+            config.put("requested_driver",driver==null?"system":driver.name);
+        } catch(org.json.JSONException ignored) { }
+        return "configuration="+config.toString();
+    }
+
     static File createReport(Context context) throws Exception {
         File directory = new File(context.getCacheDir(), "reports");
-        if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException("No se pudo crear el informe.");
+        if (!directory.isDirectory() && !directory.mkdirs()) throw new IOException(UiText.t(context, R.string.report_create_error));
         File[] old = directory.listFiles();
         if (old != null) for (File file : old)
             if (file.isFile() && file.lastModified() < System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)) file.delete();
@@ -77,10 +93,18 @@ final class Diagnostics {
         File report = new File(directory, "NFSU2-diagnostico-" + date + ".zip");
         try (ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(report))) {
             StringBuilder info = new StringBuilder(summary(context));
-            info.append("Fecha: ").append(new Date()).append("\nABI: ").append(Arrays.toString(Build.SUPPORTED_ABIS))
+            info.append(UiText.t(context, R.string.date_label)).append(new Date()).append("\nABI: ").append(Arrays.toString(Build.SUPPORTED_ABIS))
                     .append("\n\nOpciones:\n");
             for (GameOptions.Option option : GameOptions.ALL)
                 info.append(option.key).append('=').append(GameOptions.get(context, option.key)).append('\n');
+            for (GameOptions.Option option : GameOptions.VELOCITY)
+                info.append(option.key).append('=').append(GameOptions.get(context,option.key)).append('\n');
+            File gpuReport=new File(context.getFilesDir(),"velocity-gpu-report.json");
+            if(gpuReport.isFile())try(InputStream input=new java.io.FileInputStream(gpuReport)){add(zip,"velocity-gpu-report.json",readLimited(input));}
+            File performance = new File(context.getFilesDir(),"velocity-performance.csv");
+            if (performance.isFile()) try (InputStream input = new java.io.FileInputStream(performance)) {
+                add(zip,"velocity-performance.csv",readLimited(input));
+            }
             info.append("language=").append(GameOptions.language(context)).append('\n');
             add(zip, "informe.txt", info.toString().getBytes(StandardCharsets.UTF_8));
             add(zip, "logcat.txt", logcat(0));
@@ -102,12 +126,12 @@ final class Diagnostics {
     static Uri issueUri(Context context, String crash, String zipName) {
         String tail = logTail(60);
         if (tail.length() > 5000) tail = tail.substring(tail.length() - 5000);
-        String body = "### Qué ocurrió\n" + (crash == null ? "" : crash + "\n") + "\n### Pasos para reproducirlo\n\n"
-                + "### Dispositivo\n" + summary(context)
-                + "\n### Registro completo\nAdjunta aquí el archivo **" + zipName + "** que acabas de guardar.\n"
-                + "\n### Últimas líneas del registro\n```\n" + tail + "\n```\n";
+        String body = UiText.t(context, R.string.report_what) + (crash == null ? "" : crash + "\n") + UiText.t(context, R.string.report_steps)
+                + UiText.t(context, R.string.report_device) + summary(context)
+                + UiText.t(context, R.string.report_attach_prefix) + zipName + UiText.t(context, R.string.report_attach_suffix)
+                + UiText.t(context, R.string.report_tail) + tail + "\n```\n";
         return Uri.parse(ISSUES).buildUpon()
-                .appendQueryParameter("title", "[Android] " + Build.MODEL + ": " + (crash == null ? "" : "cierre inesperado"))
+                .appendQueryParameter("title", "[Android] " + Build.MODEL + ": " + (crash == null ? "" : UiText.t(context, R.string.unexpected_exit)))
                 .appendQueryParameter("body", body).build();
     }
 
@@ -163,7 +187,7 @@ final class Diagnostics {
                                     readLimited(trace));
                             traceAdded = true;
                         }
-                    } catch (IOException error) { info.append("Traza no disponible: ").append(error).append('\n'); }
+                    } catch (IOException error) { info.append(UiText.t(context, R.string.trace_unavailable)).append(error).append('\n'); }
                 }
             }
         } catch (RuntimeException error) { info.append(error); }
