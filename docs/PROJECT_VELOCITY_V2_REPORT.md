@@ -114,12 +114,12 @@ Private-delivery tooling uses an ephemeral Actions runner and single-use certifi
 
 A signed, smaller Release APK does not establish higher gameplay FPS. No before/after device result is available. Android installation, launcher rendering, import and gameplay still require the player's/device tester's validation.
 
-## Private GitHub delivery verified
+## GitHub delivery verified — published with user authorization
 
 The upload workflow completed successfully: https://github.com/silasquercloud/nfsu2-recomp-project-velocity/actions/runs/38324465123
 
-* [Private draft release](https://github.com/silasquercloud/nfsu2-recomp-project-velocity/releases/tag/untagged-b83f0a5e351654b39ce1)
-* [Private APK asset](https://github.com/silasquercloud/nfsu2-recomp-project-velocity/releases/download/untagged-b83f0a5e351654b39ce1/NFSU2-Project-Velocity-ARM64-v0.14.0-velocity.2-ptBR.apk)
-* Authenticated download verified against the exact SHA-256 and 62,145,816-byte size above. Anonymous download returns HTTP 404. Sign in with the repository owner's/writer account; do not publish the draft if private distribution is required.
-* The single-use decryption key was never committed; the temporary encrypted transport branch was removed. Only the APK is attached to the draft, no generated sources or keys.
+* [Public experimental release](https://github.com/silasquercloud/nfsu2-recomp-project-velocity/releases/tag/v0.14.0-velocity.2)
+* [Public APK asset](https://github.com/silasquercloud/nfsu2-recomp-project-velocity/releases/download/v0.14.0-velocity.2/NFSU2-Project-Velocity-ARM64-v0.14.0-velocity.2-ptBR.apk)
+* Initially delivered as a private draft with an authenticated download and anonymous HTTP 404. On 2026-10-13 the user explicitly requested publication. The release is now public/experimental; anonymous download returned HTTP 200 and the exact SHA-256 and 62,145,816-byte size were verified again. Generated sources, executable and signing keys remain private.
+* The single-use decryption key was never committed; the temporary encrypted transport branch was removed. Only the APK is attached to the release, no generated sources or keys.
 * Both remote component/guard CI runs at implementation head `11a4b3e` passed: https://github.com/silasquercloud/nfsu2-recomp-project-velocity/actions/runs/38324463423 and https://github.com/silasquercloud/nfsu2-recomp-project-velocity/actions/runs/38324467093. These checks are separate from the full local/private-input APK build.
