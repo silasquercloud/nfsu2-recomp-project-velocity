@@ -13,16 +13,24 @@ final class GameOptions {
         final int title;
         final String[] values;
         final int[] labelIds;
+        final String literalTitle;
+        final String[] literalLabels;
         Option(String key, int title, String defaultValue, String[] values, int[] labels) {
-            this.key = key; this.title = title; this.defaultValue = defaultValue; this.values = values; this.labelIds = labels;
+            this.key = key; this.title = title; this.defaultValue = defaultValue; this.values = values; this.labelIds = labels;this.literalTitle=null;this.literalLabels=null;
         }
+        Option(String key,String title,String defaultValue,String[] values,String[] labels){
+            this.key=key;this.title=0;this.defaultValue=defaultValue;this.values=values;
+            this.labelIds=null;this.literalTitle=title;this.literalLabels=labels;
+        }
+        String title(Context context){return literalTitle!=null?literalTitle:context.getString(title);}
         String[] labels(Context context) {
+            if(literalLabels!=null)return literalLabels;
             String[] result=new String[labelIds.length];
             for(int i=0;i<result.length;i++)result[i]=context.getString(labelIds[i]);
             return result;
         }
         String label(Context context, String value) {
-            for (int i = 0; i < values.length; i++) if (values[i].equals(value)) return context.getString(labelIds[i]);
+            for (int i = 0; i < values.length; i++) if (values[i].equals(value)) return literalLabels!=null?literalLabels[i]:context.getString(labelIds[i]);
             return value;
         }
     }
@@ -53,7 +61,10 @@ final class GameOptions {
     };
 
     static final String PROFILING="velocity_profiling", SHADER_CACHE="velocity_shader_cache", FRAME_PACING="velocity_frame_pacing";
+    static final String HUD="velocity_hud", ORIENTATION="screen_orientation";
     static final Option[] VELOCITY = {
+        new Option(HUD,"Performance HUD","compact",new String[]{"off","compact","detailed"},new String[]{"Off","Compact · FPS / GPU / Vulkan","Detailed · timings / pipelines / memory"}),
+        new Option(ORIENTATION,"Screen orientation","auto",new String[]{"auto","normal","reverse"},new String[]{"Automatic · both landscape directions","Landscape","Reverse landscape"}),
         new Option(FRAME_PACING,R.string.frame_pacing,"default",new String[]{"default","experimental"},new int[]{R.string.pacing_default,R.string.pacing_experimental}),
         new Option(PROFILING,R.string.profiling,"off",new String[]{"off","on"},new int[]{R.string.profiling_off,R.string.profiling_on}),
         new Option(SHADER_CACHE,R.string.shader_cache,"on",new String[]{"off","on"},new int[]{R.string.cache_off,R.string.cache_on}),

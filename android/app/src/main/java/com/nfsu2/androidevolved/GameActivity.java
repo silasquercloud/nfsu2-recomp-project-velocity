@@ -117,6 +117,8 @@ public final class GameActivity extends NativeActivity {
     private static native void nativeTypeText(String value, boolean replace);
     private static native void nativeLanguage(String language);
     private static native void nativeResolution(int width, int height);
+    private static native void nativeHud(int mode);
+    private static native void nativeSurfaceLayout(int width,int height,int left,int top);
     private static native void nativeVelocity(boolean profiling,String reportPath,String metadata,String cachePath);
     private static native boolean nativeExportVelocity();
     private static native void nativeFramePacing(boolean experimental);
@@ -132,7 +134,7 @@ public final class GameActivity extends NativeActivity {
         GameOptions.Option option=GameOptions.find(GameOptions.FPS);
         String saved=GameOptions.get(this,GameOptions.FPS);int selected=0;
         for(int i=0;i<option.values.length;i++)if(option.values[i].equals(saved))selected=i;
-        new AlertDialog.Builder(this).setTitle(option.title)
+        new AlertDialog.Builder(this).setTitle(option.title(this))
                 .setSingleChoiceItems(option.labels(this),selected,(dialog,which)->{
                     GameOptions.set(this,GameOptions.FPS,option.values[which]);
                     nativeFrameLimit(Integer.parseInt(option.values[which]));dialog.dismiss();
@@ -175,6 +177,7 @@ public final class GameActivity extends NativeActivity {
     }
 
     @Override protected void onCreate(Bundle saved) {
+        setRequestedOrientation(ScreenPolicy.orientation(GameOptions.get(this,GameOptions.ORIENTATION)));
         super.onCreate(saved);
         inputManager=(android.hardware.input.InputManager)getSystemService(INPUT_SERVICE);
         tiltSensors=(android.hardware.SensorManager)getSystemService(SENSOR_SERVICE);
@@ -203,6 +206,7 @@ public final class GameActivity extends NativeActivity {
         boolean writableCache = cacheEnabled && (cache.isDirectory() || cache.mkdirs());
         if (cacheEnabled && !writableCache)
             Toast.makeText(this,UiText.t(GameActivity.this, R.string.cache_unavailable),Toast.LENGTH_LONG).show();
+        nativeHud(GameOptions.get(this,GameOptions.HUD).equals("detailed")?2:GameOptions.get(this,GameOptions.HUD).equals("compact")?1:0);
         nativeFramePacing(GameOptions.get(this,GameOptions.FRAME_PACING).equals("experimental"));
         nativeVelocity(BuildConfig.VELOCITY_PROFILING && GameOptions.get(this, GameOptions.PROFILING).equals("on"),
                 new java.io.File(getFilesDir(), "velocity-performance.csv").getAbsolutePath(),
@@ -233,6 +237,9 @@ public final class GameActivity extends NativeActivity {
         controlsWindow = new PopupWindow(touchControls, ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT, false);
         controlsWindow.setClippingEnabled(false);
+        getWindow().getDecorView().setOnApplyWindowInsetsListener((view,insets)->{refreshDisplayLayout(insets);return insets;});
+        getWindow().getDecorView().addOnLayoutChangeListener((v,l,t,r,b,ol,ot,orr,ob)->{if(r-l!=orr-ol||b-t!=ob-ot)refreshDisplayLayout(v.getRootWindowInsets());});
+        refreshDisplayLayout(getWindow().getDecorView().getRootWindowInsets());
     }
     public void setStatus(String message) {
         runOnUiThread(() -> {
@@ -248,6 +255,31 @@ public final class GameActivity extends NativeActivity {
                     statusWindow.showAtLocation(getWindow().getDecorView(), Gravity.TOP | Gravity.START, 0, 0);
             }
         });
+    }
+    private android.hardware.display.DisplayManager displays;
+    private int lastRotation=-1;
+    private final android.hardware.display.DisplayManager.DisplayListener displayListener=new android.hardware.display.DisplayManager.DisplayListener(){
+        public void onDisplayAdded(int id){} public void onDisplayRemoved(int id){}
+        public void onDisplayChanged(int id){if(id==getWindowManager().getDefaultDisplay().getDisplayId())refreshDisplayLayout(getWindow().getDecorView().getRootWindowInsets());}
+    };
+    private void refreshDisplayLayout(android.view.WindowInsets insets){
+        DisplayMetrics metrics=new DisplayMetrics();getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+        int left=0,top=0,right=0,bottom=0;
+        if(insets!=null){
+            if(Build.VERSION.SDK_INT>=30){android.graphics.Insets safe=insets.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.displayCutout());left=safe.left;top=safe.top;right=safe.right;bottom=safe.bottom;}
+            else if(insets.getDisplayCutout()!=null){android.view.DisplayCutout cut=insets.getDisplayCutout();left=cut.getSafeInsetLeft();top=cut.getSafeInsetTop();right=cut.getSafeInsetRight();bottom=cut.getSafeInsetBottom();}
+        }
+        int rotation=getWindowManager().getDefaultDisplay().getRotation();
+        if(rotation!=lastRotation){lastRotation=rotation;tiltCalibrate=true;setTiltKeys(false,false);if(touchControls!=null)touchControls.releaseAll();}
+        android.view.View decor=getWindow().getDecorView();
+        int width=decor.getWidth()>0?decor.getWidth():Math.max(metrics.widthPixels,metrics.heightPixels);
+        int height=decor.getHeight()>0?decor.getHeight():Math.min(metrics.widthPixels,metrics.heightPixels);
+        nativeSurfaceLayout(width,height,left,top);
+        if(touchControls!=null)touchControls.setSafeArea(left,top,right,bottom,!GameOptions.get(this,GameOptions.HUD).equals("off"));
+    }
+    @Override public void onConfigurationChanged(android.content.res.Configuration config){
+        super.onConfigurationChanged(config);
+        refreshDisplayLayout(getWindow().getDecorView().getRootWindowInsets());
     }
     @Override public void onWindowFocusChanged(boolean focused) {
         super.onWindowFocusChanged(focused);
@@ -273,6 +305,7 @@ public final class GameActivity extends NativeActivity {
     }
     @Override protected void onPause() {
         foreground=false;
+        if(displays!=null)displays.unregisterDisplayListener(displayListener);
         updateTiltSensor();
         if(inputManager!=null)inputManager.unregisterInputDeviceListener(gamepadListener);
         if (statusWindow != null) statusWindow.dismiss();
@@ -280,12 +313,14 @@ public final class GameActivity extends NativeActivity {
         if (controlsWindow != null) controlsWindow.dismiss();
         super.onPause();
         // Snapshot off the UI thread, outside the frame path. Launcher shares filesDir.
-        if (BuildConfig.VELOCITY_PROFILING)
-            new Thread(() -> nativeExportVelocity(), "velocity-export").start();
+        new Thread(() -> nativeExportVelocity(), "velocity-export").start();
     }
     @Override protected void onResume() {
         super.onResume();
         foreground=true;
+        if(displays==null)displays=(android.hardware.display.DisplayManager)getSystemService(DISPLAY_SERVICE);
+        if(displays!=null)displays.registerDisplayListener(displayListener,new android.os.Handler(android.os.Looper.getMainLooper()));
+        refreshDisplayLayout(getWindow().getDecorView().getRootWindowInsets());
         updateTiltSensor();
         if(inputManager!=null){inputManager.registerInputDeviceListener(gamepadListener,null);updateGamepads();}
         if(touchControls!=null) {touchControls.removeCallbacks(updateControlMode);touchControls.post(updateControlMode);}

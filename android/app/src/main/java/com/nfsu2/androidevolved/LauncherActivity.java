@@ -195,12 +195,12 @@ public final class LauncherActivity extends Activity {
         optionsList.addView(optionRow(UiText.t(LauncherActivity.this, R.string.probe_driver), UiText.t(LauncherActivity.this, R.string.probe_capabilities), () -> probeDriver(false)));
         optionsList.addView(optionRow(UiText.t(LauncherActivity.this, R.string.game_language), languageLabel(), this::chooseLanguage));
         for (GameOptions.Option option : GameOptions.ALL)
-            optionsList.addView(optionRow(getString(option.title), option.label(this, GameOptions.get(this, option.key)), () -> chooseOption(option)));
-        optionsList.addView(optionRow(UiText.t(LauncherActivity.this, R.string.velocity_section), UiText.t(LauncherActivity.this, R.string.velocity_version), () ->
+            optionsList.addView(optionRow(option.title(this), option.label(this, GameOptions.get(this, option.key)), () -> chooseOption(option)));
+        optionsList.addView(optionRow(UiText.t(LauncherActivity.this, R.string.velocity_section), "Experimental " + BuildConfig.VERSION_NAME, () ->
                 message(UiText.t(LauncherActivity.this, R.string.velocity_section), UiText.t(LauncherActivity.this, R.string.velocity_help))));
         for (GameOptions.Option option : GameOptions.VELOCITY) {
             if (option.key.equals(GameOptions.PROFILING) && !BuildConfig.VELOCITY_PROFILING) continue;
-            optionsList.addView(optionRow(getString(option.title), option.label(this, GameOptions.get(this, option.key)), () -> chooseOption(option)));
+            optionsList.addView(optionRow(option.title(this), option.label(this, GameOptions.get(this, option.key)), () -> chooseOption(option)));
         }
         if (BuildConfig.VELOCITY_PROFILING)
             optionsList.addView(optionRow(UiText.t(LauncherActivity.this, R.string.export_performance), UiText.t(LauncherActivity.this, R.string.export_hint), this::exportVelocity));
@@ -272,7 +272,7 @@ public final class LauncherActivity extends Activity {
         String current = GameOptions.get(this, option.key);
         int checked = 0;
         for (int i = 0; i < option.values.length; i++) if (option.values[i].equals(current)) checked = i;
-        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).setTitle(option.title)
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).setTitle(option.title(this))
                 .setSingleChoiceItems(option.labels(this), checked, (dialog, which) -> {
                     GameOptions.set(this, option.key, option.values[which]);
                     dialog.dismiss(); refreshOptions();

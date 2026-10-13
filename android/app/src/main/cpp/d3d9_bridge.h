@@ -14,3 +14,5 @@ uint32_t createGuestD3D9(uint32_t sdk);
 uint32_t dispatchGuestD3D9(uint32_t token,const uint32_t* args,uint32_t* argumentCount);
 
 void setD3D9ShaderCache(const std::string& directory);
+
+void setD3D9Hud(unsigned mode);

@@ -7,7 +7,7 @@
     <application android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="false">
         <profileable android:shell="${velocityProfileable}" />
         <activity android:name=".GameActivity" android:exported="true" android:process=":game"
-            android:configChanges="orientation|screenSize|keyboardHidden" android:screenOrientation="landscape">
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|density" android:screenOrientation="userLandscape">
             <meta-data android:name="android.app.lib_name" android:value="nfsu2_android" />
         </activity>
         <activity android:name=".GpuProbeActivity" android:exported="false"

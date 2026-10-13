@@ -80,10 +80,17 @@ final class RacingControlsView extends View {
         c.area.set(cx-w*factor/2,cy-h*factor/2,cx+w*factor/2,cy+h*factor/2);
         clamp(c);controls.add(c);
     }
+    private int safeLeft,safeTop,safeRight,safeBottom;
+    private boolean hudVisible;
+    void setSafeArea(int left,int top,int right,int bottom,boolean hud){
+        if(left==safeLeft&&top==safeTop&&right==safeRight&&bottom==safeBottom&&hud==hudVisible)return;
+        safeLeft=left;safeTop=top;safeRight=right;safeBottom=bottom;hudVisible=hud;layoutControls();
+    }
     private void clamp(Control c) {
-        float w=getWidth()/scale,h=getHeight()/scale;
-        float dx=c.area.left<4?4-c.area.left:c.area.right>w-4?w-4-c.area.right:0;
-        float dy=c.area.top<4?4-c.area.top:c.area.bottom>h-4?h-4-c.area.bottom:0;
+        float left=safeLeft/scale+4,top=safeTop/scale+4;
+        float right=getWidth()/scale-safeRight/scale-4,bottom=getHeight()/scale-safeBottom/scale-4;
+        float dx=c.area.left<left?left-c.area.left:c.area.right>right?right-c.area.right:0;
+        float dy=c.area.top<top?top-c.area.top:c.area.bottom>bottom?bottom-c.area.bottom:0;
         c.area.offset(dx,dy);
     }
     @Override protected void onSizeChanged(int w,int h,int oldw,int oldh) { layoutControls(); }
@@ -101,11 +108,11 @@ final class RacingControlsView extends View {
         releaseAll(); controls.clear();selected=null;dragPointer=-1;
         if(getWidth()==0)return;
         scale=Math.min(getResources().getDisplayMetrics().density, getWidth()/820f);
-        float w=getWidth()/scale, h=getHeight()/scale, bottom=h-20;
+        float w=getWidth()/scale, h=getHeight()/scale, bottom=h-20-safeBottom/scale;
         add(w-62,16,46,"settings",EDIT);
         add(w-118,16,46,racing?"menu":"wheel",MODE);
         if(racing) {
-            add(16,16,46,"pause",1);
+            add(hudVisible?w-174:16+safeLeft/scale,16+safeTop/scale,46,"pause",1);
             if(style.equals("classic")) {
                 add(20,bottom-92,92,"left",0xcb);
                 add(124,bottom-92,92,"right",0xcd);

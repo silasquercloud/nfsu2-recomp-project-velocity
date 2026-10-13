@@ -129,12 +129,17 @@ void describeOriginal(uint32_t address,D3DSURFACE_DESC* desc){auto view=compress
 void setD3D9Compatibility(bool cpuTextures,unsigned backBuffers){
     forceCpuTextures=cpuTextures;configuredBackBuffers=backBuffers<1?1u:backBuffers>3?3u:backBuffers;
 }
+void setD3D9Hud(unsigned mode){
+    // Set before DXVK creates a device; HUD is rendered in its Vulkan command buffer.
+    setenv("DXVK_HUD",mode==1?"velocity":mode==2?"velocity,detail=1,pipelines,compiler,memory":"0",1);
+}
 void setD3D9ShaderCache(const std::string& directory){shaderCacheDirectory=directory;}
 void configureD3D9Bridge(void* base,uint32_t (*allocator)(uint32_t),void (*deallocator)(uint32_t)){
     guestBase=base;allocateGuest=allocator;freeGuest=deallocator;
 #ifdef __ANDROID__
     // Shader caches are optional; the Android process has no writable cwd.
     setenv("DXVK_STATE_CACHE",shaderCacheDirectory.empty()?"0":"1",1);
+    setenv("NFS_VELOCITY_PIPELINE_CACHE_PATH",shaderCacheDirectory.c_str(),1);
     if(!shaderCacheDirectory.empty())setenv("DXVK_STATE_CACHE_PATH",shaderCacheDirectory.c_str(),1);
     setenv("DXVK_LOG_PATH","none",1);
 #endif
