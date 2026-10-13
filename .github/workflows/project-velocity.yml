@@ -23,6 +23,7 @@ jobs:
           cmake --build build/velocity --parallel 4
           ctest --test-dir build/velocity --output-on-failure
           python3 tests/velocity/test_localization.py -v
+          python3 tests/velocity/test_rotation_integration.py -v
           cmake -S tests/android_memory -B build/memory -G Ninja
           cmake --build build/memory
           build/memory/memory_check

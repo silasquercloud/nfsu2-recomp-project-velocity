@@ -22,16 +22,19 @@ def run(args, cwd=None, capture=False):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('apk',type=Path)
+    parser.add_argument('--version',default='0.14.0-velocity.2')
+    parser.add_argument('--public',action='store_true',help='Publish experimental release only after verified draft attachment')
     parser.add_argument('--repo',default='silasquercloud/nfsu2-recomp-project-velocity')
     args=parser.parse_args()
     apk=args.apk.resolve()
-    if apk.name!='NFSU2-Project-Velocity-ARM64-v0.14.0-velocity.2-ptBR.apk':
-        parser.error('Expected the complete verified Velocity .2 ARM64 APK')
+    expected='NFSU2-Project-Velocity-ARM64-v'+args.version+('-ptBR' if args.version=='0.14.0-velocity.2' else '')+'.apk'
+    if apk.name!=expected:
+        parser.error('Expected the complete verified versioned Velocity ARM64 APK')
     root=Path(__file__).resolve().parents[1]
     source=run(['git','rev-parse','HEAD'],root,True).strip()
     with apk.open('rb') as stream:
         digest=hashlib.file_digest(stream,'sha256').hexdigest()
-    branch='release-private-upload/velocity-2-'+digest[:10]
+    branch='release-private-upload/'+args.version+'-'+digest[:10]
     transport=root/'build/private-release-upload'/digest[:10]
     if transport.exists():parser.error('Transport already exists; inspect its run before retrying')
     transport.mkdir(parents=True)
@@ -80,16 +83,16 @@ jobs:
           printf '%s  %s\\n' DIGEST "$clearapk" | sha256sum --check
           test "$(stat -c %s "$clearapk")" = APKSIZE
           cat > /tmp/notes.md <<'NOTES'
-          Private development/test APK: Project Velocity ARM64 0.14.0-velocity.2, Brazilian Portuguese launcher, Android 10+.
-          Preserve this release as a draft. Only repository writers can view/download draft assets.
+          Private development/test APK: Project Velocity ARM64 VELOCITYVERSION, Android 10+. New HUD, two landscape directions, persistent Vulkan pipeline cache and optional profiling. Existing language resources preserved.
+          Initially uploaded as a private draft; publication depends on explicit --public developer instruction.
           ARM64 Release build with development signature matching Velocity .1. Gameplay/FPS on Adreno 610, Mali G52 and other physical devices remain unverified.
           SHA-256: DIGEST
-          Report: https://github.com/REPOSITORY/blob/feature/project-velocity-arm64/docs/PROJECT_VELOCITY_V2_REPORT.md
+          Report: https://github.com/REPOSITORY/blob/feature/project-velocity-arm64/docs/PROJECT_VELOCITY_V3_REPORT.md
           NOTES
-          gh release create v0.14.0-velocity.2 "$clearapk" --draft --prerelease --target SOURCECOMMIT --title 'Project Velocity ARM64 0.14.0-velocity.2 pt-BR — teste privado' --notes-file /tmp/notes.md
+          gh release create vVELOCITYVERSION "$clearapk" --draft --prerelease --target SOURCECOMMIT --title 'Project Velocity ARM64 VELOCITYVERSION — Universal Performance Overhaul' --notes-file /tmp/notes.md
 '''
     replacements={'BRANCH':branch,'APKNAME':apk.name,'DIGEST':digest,'APKSIZE':str(apk.stat().st_size),
-                  'REPOSITORY':args.repo,'SOURCECOMMIT':source}
+                  'REPOSITORY':args.repo,'SOURCECOMMIT':source,'VELOCITYVERSION':args.version}
     for key,value in replacements.items():workflow=workflow.replace(key,value)
     (transport/'.github/workflows/private-upload.yml').write_text(workflow)
     (transport/'README.md').write_text('Temporary encrypted transport to a private GitHub draft release. No plaintext APK or private key is committed.\n')
@@ -124,15 +127,19 @@ jobs:
         time.sleep(5)
     if not runs or runs[0]['conclusion']!='success':raise RuntimeError('Private upload workflow failed or timed out: '+str(runs))
     releases=json.loads(run(['gh','api','repos/'+args.repo+'/releases'],capture=True))
-    release=next(x for x in releases if x['tag_name']=='v0.14.0-velocity.2')
+    release=next(x for x in releases if x['tag_name']=='v'+args.version)
     assert release['draft'],'Refuse an unexpectedly public release'
     asset=next(x for x in release['assets'] if x['name']==apk.name)
     assert asset['size']==apk.stat().st_size
     assert asset.get('digest')=='sha256:'+digest
+    if args.public:
+        release=json.loads(run(['gh','api','--method','PATCH','repos/'+args.repo+'/releases/'+str(release['id']),'-F','draft=false','-F','prerelease=true'],capture=True))
+        assert not release['draft']
+        asset=next(x for x in release['assets'] if x['name']==apk.name)
     # Remove our temporary encrypted transport ref after the verified private upload.
     run(['git','push','origin','--delete',branch],transport)
     result={'release_url':release['html_url'],'asset_url':asset['browser_download_url'],
-            'asset_api_url':asset['url'],'draft':True,'bytes':asset['size'],'sha256':digest,'run':runs[0]['url']}
+            'asset_api_url':asset['url'],'draft':release['draft'],'bytes':asset['size'],'sha256':digest,'run':runs[0]['url']}
     (transport/'delivery.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
