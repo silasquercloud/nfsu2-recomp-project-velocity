@@ -1,3 +1,4 @@
+#include <initializer_list>
 #include "velocity_surface.h"
 #include <stdexcept>
 #include <cstdio>

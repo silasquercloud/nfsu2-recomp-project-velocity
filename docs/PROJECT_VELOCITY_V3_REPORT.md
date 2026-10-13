@@ -143,6 +143,9 @@ Physical Android lifecycle/driver behavior still needs validation.
 * Nine host CTest checks passed with UBSan: profiling enabled/compiled out, memory
   ranges, DXT regions, frame pacing, Vulkan 1.1 feature masks, frame statistics,
   pipeline-cache corruption/identity/atomic I/O, surface capability policy.
+* GitHub CI initially caught a missing explicit `<initializer_list>` include in
+  the surface-policy test with newer Vulkan headers; corrected without APK code
+  changes. Host checks passed; the CI rerun includes ARM64 compilation.
 * The nine component executables also cross-compiled for ARM64/API 29; they were
   not run on Android.
 * Existing graphics memory/DXT, COM lifetime, guest memory protection, PCM mixer
